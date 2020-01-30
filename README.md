@@ -23,7 +23,7 @@ I find GDML volumes a bit confusing so am going to diverge a bit
   
   * Solid
      
-     Graphics Object
+    * Graphics Object
      
   * Material
   

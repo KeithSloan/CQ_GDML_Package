@@ -1,0 +1,17 @@
+import PythonOCC
+
+class gdml() :
+
+    def make(self) :
+        # ????
+
+    def gObject(solid,position,rotation,material) :
+
+    def gVol(name) :    
+
+    def gMaterial(name) :    
+
+    def gExport(name) :    
+        
+    def gBox(x,y,z) :
+        return(BRepPrimAPI_MakeBox(x,y,z).Shape()

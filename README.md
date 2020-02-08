@@ -1,4 +1,4 @@
-# CQ-GDML-Module
+# CQ_GDML_Package
 Extension to Cad Query to allow program creation of GDML models
 
 ## Aim

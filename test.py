@@ -1,6 +1,9 @@
 import cadquery
 import cqgdml
 
+position = 0
+rotation = 0
+
 v = gVol("world")
 s = gBox(10,10,10)
 m = gMaterial('Air')

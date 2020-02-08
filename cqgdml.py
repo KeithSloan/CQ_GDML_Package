@@ -1,39 +1,38 @@
-import PythonOCC
+import OCC
 
-class gdml() :
+class gObject(self,solid,position,rotation,material) :
+      def __init__(self,name) :
+          self.Name = name
 
-    def make(self) :
-        # ????
+class gVol(self,name) :    
 
-    class gObject(self,solid,position,rotation,material) :
-       def __init__(self,name) :
-
-    class gVol(self,name) :    
-
-       def __init__(self,name) :
-           self.Objects = []
-           self.SubVols = []
-           self.Name = name
+      def __init__(self,name) :
+          self.Objects = []
+          self.SubVols = []
+          self.Name = name
        
-       def addObject(obj) :
-           append(self.Objects(obj))
+      def addObject(self,obj) :
+          append(self.Objects(obj))
 
-       def addVol(vol) :
-           append(self.SubVols(vols))
+      def addVol(self,vol) :
+          append(self.SubVols(vols))
 
-       def export(name) :
-           for v in self.SubVols :
+      def export(self,name) :
+          for v in self.SubVols :
+            exportVol(v)
 
-           for o in self.Objects :    
+          for o in self.Objects :    
+            exportObj(o)
 
-       def toFreeCAD():    
+      #def toFreeCAD():    
 
-    class gMaterial(self, name) :    
-       def __init__(self,name) :
+class gMaterial(self, name) :    
+      def __init__(self,name) :
+          self.Name = name
 
-    class gBox(x,y,z) :
-       def __init__(self,x,y,z) :
-           #self.x = x
-           #self.y = y
-           #self.z = z
+class gBox(x,y,z) :
+      def __init__(self,x,y,z) :
+           self.x = x
+           self.y = y
+           self.z = z
            self.shape = BRepPrimAPI_MakeBox(x,y,z).Shape()

@@ -1,11 +1,6 @@
 import OCC
 
-class gObject(self,solid,position,rotation,material) :
-      def __init__(self,name) :
-          self.Name = name
-
-class gVol(self,name) :    
-
+class gVol:    
       def __init__(self,name) :
           self.Objects = []
           self.SubVols = []
@@ -26,13 +21,17 @@ class gVol(self,name) :
 
       #def toFreeCAD():    
 
-class gMaterial(self, name) :    
+class gMaterial:    
       def __init__(self,name) :
           self.Name = name
 
-class gBox(x,y,z) :
+class gObject:
+      def __init__(self,solid,material,position,rotation):
+          self.Solid = solid
+
+class gBox :
       def __init__(self,x,y,z) :
            self.x = x
            self.y = y
            self.z = z
-           self.shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
+           #self.shape = BRepPrimAPI_MakeBox(x,y,z).Shape()

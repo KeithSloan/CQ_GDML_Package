@@ -13,7 +13,6 @@ class gVol:
               i.show
               
       def addObject(self,obj) :
-          objects = []
           objects.append(obj)
 
       def addVol(self,vol) :

@@ -14,7 +14,7 @@ class gVol:
               
       def addObject(self,obj) :
           objects = []
-          objects.tappend(obj)
+          objects.append(obj)
 
       def addVol(self,vol) :
           SubVols.append(vols)

@@ -7,23 +7,23 @@ class gVol:
           self.Name = name
 
       def show(self) :
-          for i in SubVols :
+          for i in self.SubVols :
               i.show
           for i in self.Objects :
               i.show
               
       def addObject(self,obj) :
-          objects.append(obj)
+          self.Objects.append(obj)
 
       def addVol(self,vol) :
-          SubVols.append(vols)
+          self.SubVols.append(vols)
 
-      def export(self,name) :
+      def exportVol(self,name) :
           for v in self.SubVols :
-            exportVol(v)
+            v.exportVol(name)
 
           for o in self.Objects :    
-            exportObj(o)
+            o.exportObj()
 
       #def toFreeCAD():    
 
@@ -40,6 +40,9 @@ class gObject:
 
       def show():
           self.Solid.show(self.Position, self.Rotation)
+
+      def exportObj(name):
+          print("Export Obj")
 
 class gBox :
       def __init__(self,x,y,z) :

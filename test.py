@@ -1,5 +1,10 @@
 import cadquery
+
+# need for reload
+import importlib
 #import cqgdml
+import cqgdml
+importlib.reload(cqgdml)
 from cqgdml import *
 
 position = 0
@@ -13,6 +18,6 @@ m = gMaterial('Air')
 o = gObject(s,m,position,rotation)
 v.addObject(o)
 v.show()
-v.export("/tmp/file.gdml")
+v.exportVol("/tmp/file.gdml")
 #display.DisplayShape(gVol, update=True )
 #start_display()

@@ -63,3 +63,4 @@ class gBox :
           shape = cq.Workplane('XY').box(self.x,self.y,self.z)
           #shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
           show_object(shape)
+          #return(shape)

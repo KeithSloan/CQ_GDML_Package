@@ -1,4 +1,4 @@
-import cadquery
+import cadquery as cq
 
 # need for reload
 import importlib

@@ -1,4 +1,5 @@
 import OCC
+import cqgdml as cq
 
 class gVol:    
       def __init__(self,name) :
@@ -7,10 +8,14 @@ class gVol:
           self.Name = name
 
       def show(self) :
+          print("Show Volume")
           for i in self.SubVols :
-              i.show
+              i.show()
+
+          print("Number of Objects : "+str(len(self.Objects)))
+          print("Show Objects")
           for i in self.Objects :
-              i.show
+              i.show()
               
       def addObject(self,obj) :
           self.Objects.append(obj)
@@ -36,9 +41,10 @@ class gObject:
           self.Solid = solid
           self.Material = material
           self.Position = position
-          self.rotation = rotation
+          self.Rotation = rotation
 
-      def show():
+      def show(self):
+          print("Show Object")
           self.Solid.show(self.Position, self.Rotation)
 
       def exportObj(name):
@@ -51,6 +57,9 @@ class gBox :
            self.z = z
            #self.shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
 
-      def show(position, rotation) :
-          shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
+      def show(self, position, rotation) :
+          import cadquery as cq
+          print("Show Box")
+          shape = cq.Workplane('XY').box(self.x,self.y,self.z)
+          #shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
           show_object(shape)

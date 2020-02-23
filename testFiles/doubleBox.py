@@ -14,7 +14,6 @@ rotation = 0
 v = gVol("world")
 s = gBox("box1",10,10,10)
 m = gMaterial('G4_AIR0x55d123d17ea0')
-m.getName()
 o1 = gObject(s,m,None,rotation)
 v.addObject(o1)
 o2 = gObject(s,m,[20,25,0],rotation)

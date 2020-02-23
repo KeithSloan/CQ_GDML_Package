@@ -46,7 +46,13 @@ class gObject:
 
       def getShape(self):
           print("Get Object Shape")
-          return(self.Solid.getShape())
+          shape = self.Solid.getShape()
+          if ( self.Position == [0,0,0] or self.Position == None ) :
+             return(shape)
+          else :
+             print("Translate position") 
+             fshape = shape.translate(cq.Vector(self.Position))
+             return(fshape)
 
       def exportObj(name):
           print("Export Obj")

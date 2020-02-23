@@ -7,17 +7,14 @@ import cqgdml
 importlib.reload(cqgdml)
 from cqgdml import *
 
-position = 0
 rotation = 0
 
 #display, start_display, add_menu, add_function_to_menu = init_display()
 
 v = gVol("world")
 s = gBox(10,10,10)
-m = gMaterial('Air')
-o = gObject(s,m,position,rotation)
+m = gMaterial('G4_AIR0x55d123d17ea0')
+o = gObject(s,m,None,rotation)
 v.addObject(o)
 show_object(v.shape2show())
-#v.exportVol("/tmp/file.gdml")
-#display.DisplayShape(gVol, update=True )
-#start_display()
+v.exportVol("/tmp/file.gdml")

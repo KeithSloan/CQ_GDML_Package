@@ -1,6 +1,19 @@
 import OCC
 import cadquery as cq
 
+def writeHdr(fp) :
+    fp.write('<?xml version="1.0" encoding="UTF-8" standalone="no" ?>')
+    fp.write('<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd"') 
+    fp.write("\n")
+    fp.write('<define/>')
+    fp.write("\n")
+
+def writeSolids(fp,solidList) :
+    fp.write('<solids>\n')
+    for s in solidList :
+        s.writeSolid(fp)
+    fp.write('</solids>\n')    
+
 class gVol:    
       def __init__(self,name) :
           self.Name = name
@@ -24,18 +37,83 @@ class gVol:
       def addVol(self,vol) :
           self.SubVols.append(vols)
 
-      def exportVol(self,name) :
-          for v in self.SubVols :
-            v.exportVol(name)
+      def exportVol(self, name, subvol = False ) :
+          fp = open(name,"w")
+          writeHdr(fp)
+          print("Export Volume")
+          if subvol == False : 
+             # For now append Materials.xml
+             print("Export Materials")
+             from pathlib import Path
+             mats = Path('./materials.xml').read_text()
+             fp.write(mats)
 
-          for o in self.Objects :    
-            o.exportObj()
+             # Now deal with solids
+             print("Export Solids")
+             solidList = []
+             solidNames = []
+             self.getSolids(solidNames,solidList,True)
+             print(solidNames)
+             writeSolids(fp,solidList)
 
-      #def toFreeCAD():    
+          fp.close()
+
+      def getSolids(self,nameList, solidList, subvol=True) :
+          if len(self.SubVols) > 0 :
+             for v in self.SubVols :
+                 v.getSolids(nameList,solidList,True)
+          
+          if len(self.Objects) > 0 :
+             for o in self.Objects :
+                 solid = o.getSolid()
+                 if solid != None :
+                    name = solid.getName()
+                    if name not in nameList :
+                       nameList.append(name)
+                       solidList.append(solid)
+
+
+      def exportMaterials(self, name, subvol = False ) :
+          print("Export Materials")
+          matList = []
+          if len(self.SubVols) > 0 :
+             for v in self.SubVols :
+                 mat = v.getMateials(matList,True)
+                 if mat != None :
+                    matList.append(mat)
+
+          print("Objects materials")
+          if len(self.Objects) > 0 :
+             for o in self.Objects :
+                 mat = o.getMaterial(matList)
+                 if mat != None :
+                    matList.append(mat)
+
+          print(matList)
+
+      def getMaterials(self, matList, subvol = False ) :
+          print("Get Materials")
+          if subvol == True :
+             if len(self.SubVols) > 0 :
+                for s in self.SubVols : 
+                    mat = s.getMaterials()
+                    if mat != None :
+                       matList.append(mat) 
+
+          if len(self.Objects) > 0 :
+             for o in self.Objects :
+                 mat = o.getMaterials()
+                 if mat != None :
+                    matList.append(mat)
+
+
 
 class gMaterial:    
       def __init__(self,name) :
           self.Name = name
+
+      def getName(self) :
+          return(self.Name)
 
 class gObject:
       def __init__(self,solid,material,position,rotation):
@@ -54,15 +132,32 @@ class gObject:
              fshape = shape.translate(cq.Vector(self.Position))
              return(fshape)
 
+      def getMaterial(self, matList ) : 
+          name = self.Material.getName()
+          if name not in matList :
+             matList.append(name)
+             print(name)
+
+      def getSolid(self) :
+          return(self.Solid)
+
       def exportObj(name):
           print("Export Obj")
 
 class gBox :
-      def __init__(self,x,y,z) :
+      def __init__(self,name,x,y,z) :
+           self.name = name
            self.x = x
            self.y = y
            self.z = z
            #self.shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
+
+      def getName(self) :
+          return(self.name)
+
+      def writeSolid(self,fp) :
+          fp.write('<box name='+str(self.name)+' x="'+ \
+                    str(self.x)+' y="'+str(self.y)+' z="'+str(self.z)+'/>\n')
 
       def getShape(self) :
           import cadquery as cq

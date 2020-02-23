@@ -3,29 +3,23 @@ import cadquery as cq
 
 class gVol:    
       def __init__(self,name) :
+          self.Name = name
           self.Objects = []
           self.SubVols = []
-          self.Name = name
+          #Combined shape of objects
+          self.Shape = None 
 
       def shape2show(self) :
-          import cadquery as cq
-          cq.Workplane.combine(self)
-          return(cq.first(self))
+          return(self.Shape)
 
-      def addStack(self) :
-          # Add to stack
-          if len(self.SubVols) > 0 :
-             print("Show Volume")
-             for i in self.SubVols :
-                 i.addStack()
-
-          if len(self.Objects) > 0 :
-             print("Show Objects")
-             for i in self.Objects :
-                 i.addStack()
-              
       def addObject(self,obj) :
           self.Objects.append(obj)
+          shape = obj.getShape()
+          if self.Shape != None :
+             combined = self.Shape.add(shape)
+             self.Shape = combined
+          else :
+             self.Shape = shape 
 
       def addVol(self,vol) :
           self.SubVols.append(vols)
@@ -50,9 +44,9 @@ class gObject:
           self.Position = position
           self.Rotation = rotation
 
-      def addStack(self):
-          print("Add Object")
-          self.Solid.addStack(self.Position, self.Rotation)
+      def getShape(self):
+          print("Get Object Shape")
+          return(self.Solid.getShape())
 
       def exportObj(name):
           print("Export Obj")
@@ -64,7 +58,7 @@ class gBox :
            self.z = z
            #self.shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
 
-      def addStack(self, position, rotation) :
+      def getShape(self) :
           import cadquery as cq
-          print("Stack gBox")
-          cq.add = cq.Workplane('XY').box(self.x,self.y,self.z)
+          print("Get Shape gBox")
+          return( cq.Workplane('XY').box(self.x,self.y,self.z))

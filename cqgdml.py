@@ -35,7 +35,7 @@ class gVol:
              self.Shape = shape 
 
       def addVol(self,vol) :
-          self.SubVols.append(vols)
+          self.SubVols.append(vol)
 
       def exportVol(self, name, subvol = False ) :
           fp = open(name,"w")

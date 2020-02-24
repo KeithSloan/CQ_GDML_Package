@@ -12,7 +12,7 @@ rotation = 0
 v = gVol("world")
 s = gBox("box1",10,10,10)
 m = gMaterial('G4_AIR0x55d123d17ea0')
-o = gObject(s,m,None,rotation)
+o = gObject("o1",s,m,None,rotation)
 v.addObject(o)
 show_object(v.shape2show())
 v.exportVol("/tmp/file.gdml")

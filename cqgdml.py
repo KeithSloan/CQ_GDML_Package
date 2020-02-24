@@ -15,15 +15,27 @@ def writeSolids(fp,solidList) :
     fp.write('</solids>\n')   
 
 class gVol:    
-      def __init__(self,name) :
+      def __init__(self,name,wire=False) :
           self.Name = name
+          self.Wire = wire
           self.Objects = []
           self.SubVols = []
           #Combined shape of objects
           self.Shape = None 
 
       def shape2show(self) :
-          return(self.Shape)
+          vs = self.Shape
+          if len(self.SubVols) > 0 :
+             print("Get SubVols")
+             for v in self.SubVols :
+                 svShape = v.shape2show()
+                 if svShape != None :
+                    if vs != None :
+                       combined = vs.add(svShape)
+                       vs = combined
+                    else :   
+                       vs = svShape 
+          return(vs)
 
       def addObject(self,obj) :
           self.Objects.append(obj)
@@ -74,7 +86,7 @@ class gVol:
               for o in self.Objects :
                   fp.write('<volume name ="LV"'+o.Name+'">')
                   fp.write('<solidref ref="'+o.Solid.Name+'">')
-                  mat = o.Solid.Material.getName()
+                  mat = o.Material.getName()
                   fp.write('<materialref ref="'+mat+'">')
               fp.write('</volume>')
           for v in self.SubVols :
@@ -147,7 +159,8 @@ class gMaterial:
           return(self.Name)
 
 class gObject:
-      def __init__(self,solid,material,position,rotation):
+      def __init__(self,name,solid,material,position,rotation):
+          self.Name = name
           self.Solid = solid
           self.Material = material
           self.Position = position

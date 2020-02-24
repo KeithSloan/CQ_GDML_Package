@@ -9,8 +9,6 @@ from cqgdml import *
 
 rotation = 0
 
-#display, start_display, add_menu, add_function_to_menu = init_display()
-
 v = gVol("world")
 s = gBox("box1",10,10,10)
 m = gMaterial('G4_AIR0x55d123d17ea0')

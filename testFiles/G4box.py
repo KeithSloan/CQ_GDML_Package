@@ -9,8 +9,6 @@ from cqgdml import *
 
 rotation = 0
 
-#display, start_display, add_menu, add_function_to_menu = init_display()
-
 v1 = gVol("World")
 v2 = gVol("Dummy")
 v1.addVol(v2)

@@ -12,7 +12,7 @@ def writeSolids(fp,solidList) :
     fp.write('<solids>\n')
     for s in solidList :
         s.writeSolid(fp)
-    fp.write('</solids>\n')    
+    fp.write('</solids>\n')   
 
 class gVol:    
       def __init__(self,name) :
@@ -56,6 +56,36 @@ class gVol:
              print(solidNames)
              writeSolids(fp,solidList)
 
+          # Now deal with structure
+          fp.write('<structure>')
+          fp.write('<volume name ="'+str(self.Name)+'">'
+          # if more than one object have to output as vols & physvol
+          numObj = len(self.Objects)
+          if numObj == 1 :       
+             self.Objects[0].exportObj(fp)
+          elif numObj > 1 :
+              # Ouput physvols
+              for o in self.Objects :
+                  fp.write('<physvol name="PV"'+o.Name+'">')
+                  fp.write('<volumeref ref="LV'+o.Name+'">')
+                  fp.write('</physvol>')
+              fp.write('</volume>')
+              # Now output LV's    
+              for o in self.Objects :
+                  fp.write('<volume name ="LV"'+o.Name+'">')
+                  fp.write('<solidref ref="'+o.Solid.Name+'">')
+                  fp.write('<materialref ref="'o.Solid.Material.Name+'">')
+              fp.write('</volume>')
+          for v in self.SubVols :
+              fp.write('<physvol name="PV"'+v.Name+'">')
+              fp.write('<volumeref ref="LV'+v.Name+'">')
+              fp.write('</physvol>')
+          fp.write('</volume>')
+          fp.write('</structure>')
+
+          fp.write('<setup name = "Default" version "1.0">')
+          fp.write('<world ref="'+self.Name+'"/>')
+          fp.write('</setup>')
           fp.close()
 
       def getSolids(self,nameList, solidList, subvol=True) :
@@ -141,8 +171,10 @@ class gObject:
       def getSolid(self) :
           return(self.Solid)
 
-      def exportObj(name):
+      def exportObj(self,fp) :
           print("Export Obj")
+          fp.write('materialref ref="'+self.Material.Name+'"/>'
+          fp.write('solidred ref="'+self.Solid.Name'"/>')        
 
 class gBox :
       def __init__(self,name,x,y,z) :

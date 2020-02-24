@@ -58,7 +58,7 @@ class gVol:
 
           # Now deal with structure
           fp.write('<structure>')
-          fp.write('<volume name ="'+str(self.Name)+'">'
+          fp.write('<volume name ="'+str(self.Name)+'">')
           # if more than one object have to output as vols & physvol
           numObj = len(self.Objects)
           if numObj == 1 :       
@@ -74,7 +74,8 @@ class gVol:
               for o in self.Objects :
                   fp.write('<volume name ="LV"'+o.Name+'">')
                   fp.write('<solidref ref="'+o.Solid.Name+'">')
-                  fp.write('<materialref ref="'o.Solid.Material.Name+'">')
+                  mat = o.Solid.Material.getName()
+                  fp.write('<materialref ref="'+mat+'">')
               fp.write('</volume>')
           for v in self.SubVols :
               fp.write('<physvol name="PV"'+v.Name+'">')
@@ -173,25 +174,25 @@ class gObject:
 
       def exportObj(self,fp) :
           print("Export Obj")
-          fp.write('materialref ref="'+self.Material.Name+'"/>'
-          fp.write('solidred ref="'+self.Solid.Name'"/>')        
+          fp.write('materialref ref="'+self.Material.Name+'"/>')
+          fp.write('solidred ref="'+self.Solid.Name+'"/>')        
 
 class gBox :
       def __init__(self,name,x,y,z) :
-           self.name = name
-           self.x = x
-           self.y = y
-           self.z = z
+           self.Name = name
+           self.X = x
+           self.Y = y
+           self.Z = z
            #self.shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
 
       def getName(self) :
-          return(self.name)
+          return(self.Name)
 
       def writeSolid(self,fp) :
-          fp.write('<box name='+str(self.name)+' x="'+ \
-                    str(self.x)+' y="'+str(self.y)+' z="'+str(self.z)+'/>\n')
+          fp.write('<box name='+str(self.Name)+' x="'+ \
+                    str(self.X)+' y="'+str(self.Y)+' z="'+str(self.Z)+'/>\n')
 
       def getShape(self) :
           import cadquery as cq
           print("Get Shape gBox")
-          return( cq.Workplane('XY').box(self.x,self.y,self.z))
+          return( cq.Workplane('XY').box(self.X,self.Y,self.Z))

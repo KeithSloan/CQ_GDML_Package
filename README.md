@@ -1,6 +1,9 @@
 # CQ_GDML_Package
 Extension to Cad Query to allow program creation of GDML models
 
+## Install requirement
+Make sure PYTHONPATH includes directory that contains cqgdml.py
+
 ## Aim
 Provide the function to allow cad-query to create GDML Models.
 

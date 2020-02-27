@@ -105,13 +105,7 @@ class gVol:
 
         print("Export Volume")
         if subvol == False :
-           s="""<?xml version="1.0" ?>
-           <!DOCTYPE doc [ <!ENTITY materials SYSTEM  "materials.xml"> 
-           ]>
-           <gdml>
-           </gdml>
-           """
-           gdml = ET.fromstring(s.encode("UTF-8"))
+           gdml = ET.Element('gdml') 
            define = ET.SubElement(gdml, 'define')
            structure = ET.SubElement(gdml, 'structure')
            setup = ET.SubElement(gdml, 'setup', {'name': 'Default', 'version': '1.0'})
@@ -156,7 +150,14 @@ class gVol:
 
         indent(gdml)
         print("Write GDML file")
-        ET.ElementTree(gdml).write(filename,encoding='utf-8', xml_declaration=True)
+        #ET.ElementTree(gdml).write(filename)
+        with open(filename, "w", encoding='UTF-8') as xf:
+            doc_type = """<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE doc [
+<!ENTITY materials SYSTEM "materials.xml">
+]>"""
+            tostring = ET.tostring(gdml).decode('utf-8')
+            file = f"{doc_type}{tostring}"
+            xf.write(file)
         print("GDML file written")
 
     def getSolids(self, solids, nameList, subvol=True) :

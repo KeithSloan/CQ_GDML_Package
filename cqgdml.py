@@ -27,155 +27,190 @@
 import OCC
 import cadquery as cq
 
+#########################################################
+# Pretty format GDML                                    #
+#########################################################
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    j = "\n" + (level-1)*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for subelem in elem:
+            indent(subelem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = j
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = j
+    return elem
+
 def writeHdr(fp) :
     fp.write('<?xml version="1.0" encoding="UTF-8" standalone="no" ?>')
     fp.write('<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd"') 
-    fp.write("\n")
-    fp.write('<define/>')
-    fp.write("\n")
 
-def writeSolids(fp,solidList) :
-    fp.write('<solids>\n')
-    for s in solidList :
-        s.writeSolid(fp)
-    fp.write('</solids>\n')   
 
 class gVol:    
-      def __init__(self,name,wire=False) :
-          self.Name = name
-          self.Wire = wire
-          self.Objects = []
-          self.SubVols = []
-          #Combined shape of objects
-          self.Shape = None 
+    import lxml.etree  as ET
+    
+    def __init__(self,name,wire=False) :
+        self.Name = name
+        self.Wire = wire
+        self.Objects = []
+        self.SubVols = []
+        #Combined shape of objects
+        self.Shape = None 
 
-      def shape2show(self) :
-          vs = self.Shape
-          if len(self.SubVols) > 0 :
-             print("Get SubVols")
-             for v in self.SubVols :
-                 svShape = v.shape2show()
-                 if svShape != None :
-                    if vs != None :
-                       combined = vs.add(svShape)
-                       vs = combined
-                    else :   
-                       vs = svShape 
-          return(vs)
+    def shape2show(self) :
+        print("Vol Shape to Show")
+        vs = self.Shape
+        if len(self.SubVols) > 0 :
+           print("Get SubVols")
+           for v in self.SubVols :
+               svShape = v.shape2show()
+               if svShape != None :
+                  if vs != None :
+                     combined = vs.add(svShape)
+                     vs = combined
+                  else :   
+                     vs = svShape 
+        print("Return Vol Shape")             
+        return(vs)
 
-      def addObject(self,obj) :
-          self.Objects.append(obj)
-          shape = obj.getShape()
-          if self.Shape != None :
-             combined = self.Shape.add(shape)
-             self.Shape = combined
-          else :
-             self.Shape = shape 
+    def addObject(self,obj) :
+        print("Add Object")
+        self.Objects.append(obj)
+        shape = obj.getShape()
+        if self.Shape != None :
+           combined = self.Shape.add(shape)
+           self.Shape = combined
+        else :
+           self.Shape = shape 
 
-      def addVol(self,vol) :
-          self.SubVols.append(vol)
+    def addVol(self,vol) :
+        self.SubVols.append(vol)
 
-      def exportVol(self, name, subvol = False ) :
-          fp = open(name,"w")
-          writeHdr(fp)
-          print("Export Volume")
-          if subvol == False : 
-             # For now append Materials.xml
-             print("Export Materials")
-             from pathlib import Path
-             mats = Path('./materials.xml').read_text()
-             fp.write(mats)
+    def exportPosition(self, define, pos) :    
+        global POScount
+        if pos != False :
+           posName = 'Pos'+name+str(POScount)
+           POScount += 1
+           ET.SubElement(define, 'position', {'name': posName, 'unit': 'mm', \
+                      'x': str(pos[0]), 'y': str(pos[1]), 'z':str(pos[2])})     
 
-             # Now deal with solids
-             print("Export Solids")
-             solidList = []
-             solidNames = []
-             self.getSolids(solidNames,solidList,True)
-             print(solidNames)
-             writeSolids(fp,solidList)
+    def exportVol(self, filename, subvol = False ) :
+        import lxml.etree  as ET
 
-          # Now deal with structure
-          fp.write('<structure>')
-          fp.write('<volume name ="'+str(self.Name)+'">')
-          # if more than one object have to output as vols & physvol
-          numObj = len(self.Objects)
-          if numObj == 1 :       
-             self.Objects[0].exportObj(fp)
-          elif numObj > 1 :
-              # Ouput physvols
-              for o in self.Objects :
-                  fp.write('<physvol name="PV"'+o.Name+'">')
-                  fp.write('<volumeref ref="LV'+o.Name+'">')
-                  fp.write('</physvol>')
-              fp.write('</volume>')
-              # Now output LV's    
-              for o in self.Objects :
-                  fp.write('<volume name ="LV"'+o.Name+'">')
-                  fp.write('<solidref ref="'+o.Solid.Name+'">')
-                  mat = o.Material.getName()
-                  fp.write('<materialref ref="'+mat+'">')
-              fp.write('</volume>')
-          for v in self.SubVols :
-              fp.write('<physvol name="PV"'+v.Name+'">')
-              fp.write('<volumeref ref="LV'+v.Name+'">')
-              fp.write('</physvol>')
-          fp.write('</volume>')
-          fp.write('</structure>')
+        print("Export Volume")
+        if subvol == False :
+           s="""<?xml version="1.0" ?>
+           <!DOCTYPE doc [ <!ENTITY materials SYSTEM  "materials.xml"> 
+           ]>
+           <gdml>
+           </gdml>
+           """
+           gdml = ET.fromstring(s.encode("UTF-8"))
+           define = ET.SubElement(gdml, 'define')
+           structure = ET.SubElement(gdml, 'structure')
+           setup = ET.SubElement(gdml, 'setup', {'name': 'Default', 'version': '1.0'})
+           ET.SubElement(setup,'world', {'ref':self.Name})
+           ent  = ET.Entity("materials")
+           materials = ET.SubElement(gdml, 'materials')
+           materials.append(ent)
 
-          fp.write('<setup name = "Default" version "1.0">')
-          fp.write('<world ref="'+self.Name+'"/>')
-          fp.write('</setup>')
-          fp.close()
+           # Now deal with solids
+           solids = ET.SubElement(gdml, 'solids')
+           print("Export Solids")
+           solidNames = []
+           self.getSolids(solids, solidNames,True)
 
-      def getSolids(self,nameList, solidList, subvol=True) :
-          if len(self.SubVols) > 0 :
-             for v in self.SubVols :
-                 v.getSolids(nameList,solidList,True)
+        # Now deal with structure
+        # if more than one object have to output as vols & physvol
+        print("Export Volume")
+        vol = ET.SubElement(structure,'Volume', {'name': self.Name})
           
-          if len(self.Objects) > 0 :
-             for o in self.Objects :
-                 solid = o.getSolid()
-                 if solid != None :
-                    name = solid.getName()
-                    if name not in nameList :
-                       nameList.append(name)
-                       solidList.append(solid)
+        numObj = len(self.Objects)
+        if numObj == 1 :       
+           o = self.Objects[0] 
+           ET.SubElement(vol, 'materialref', {'ref': o.getMaterialName()})
+           ET.SubElement(vol, 'solidref', {'ref': o.getSolidName()})
+          
+        elif numObj > 1 :
+           # Ouput physvols
+           for o in self.Objects :
+               pvname = 'PV'+o.Name
+               print('<physvol : '+pvname)
+               pvol = ET.SubElement(vol,'volume', {'name': pvname})
+               ET.SubElement(pvol, 'materialref', {'ref': o.getMaterialName()})
+               ET.SubElement(pvol, 'solidref', {'ref': o.getSolidName()})
+
+        for v in self.SubVols :
+              pvname = 'PV'+v.Name
+              print('<physvol : '+pvname)
+              pvol = ET.SubElement(vol,'volume', {'name': pvname})
+              ET.SubElement(pvol, 'materialref', {'ref': o.getMaterialName()})
+              ET.SubElement(pvol, 'solidref', {'ref': o.getSolidName()})
+              exportPosition(define, o.Position)
+
+        indent(gdml)
+        print("Write GDML file")
+        ET.ElementTree(gdml).write(filename,encoding='utf-8', xml_declaration=True)
+        print("GDML file written")
+
+    def getSolids(self, solids, nameList, subvol=True) :
+        print("Get Solids")
+        if len(self.SubVols) > 0 :
+           for v in self.SubVols :
+               v.getSolids(solids, nameList, True)
+          
+        if len(self.Objects) > 0 :
+           print("Volume Get Objects")
+           for o in self.Objects :
+               sld = o.getSolid()
+               if sld != None :
+                  print("Get name")
+                  name = sld.getName()
+                  print(name)
+                  if name not in nameList :
+                     nameList.append(name)
+                     print("export Solid")
+                     sld.exportSolid(solids)
 
 
-      def exportMaterials(self, name, subvol = False ) :
-          print("Export Materials")
-          matList = []
-          if len(self.SubVols) > 0 :
-             for v in self.SubVols :
-                 mat = v.getMateials(matList,True)
-                 if mat != None :
-                    matList.append(mat)
+    def exportMaterials(self, name, subvol = False ) :
+        print("Export Materials")
+        matList = []
+        if len(self.SubVols) > 0 :
+           for v in self.SubVols :
+               mat = v.getMateials(matList,True)
+               if mat != None :
+                  matList.append(mat)
 
-          print("Objects materials")
-          if len(self.Objects) > 0 :
-             for o in self.Objects :
-                 mat = o.getMaterial(matList)
-                 if mat != None :
-                    matList.append(mat)
+        print("Objects materials")
+        if len(self.Objects) > 0 :
+           for o in self.Objects :
+               mat = o.getMaterial(matList)
+               if mat != None :
+                 matList.append(mat)
 
-          print(matList)
+        print(matList)
 
-      def getMaterials(self, matList, subvol = False ) :
-          print("Get Materials")
-          if subvol == True :
-             if len(self.SubVols) > 0 :
-                for s in self.SubVols : 
-                    mat = s.getMaterials()
-                    if mat != None :
-                       matList.append(mat) 
+    def getMaterials(self, matList, subvol = False ) :
+        print("Get Materials")
+        if subvol == True :
+           if len(self.SubVols) > 0 :
+              for s in self.SubVols : 
+                  mat = s.getMaterials()
+                  if mat != None :
+                     matList.append(mat) 
 
-          if len(self.Objects) > 0 :
-             for o in self.Objects :
-                 mat = o.getMaterials()
-                 if mat != None :
-                    matList.append(mat)
-
-
+        if len(self.Objects) > 0 :
+           for o in self.Objects :
+               mat = o.getMaterials()
+               if mat != None :
+                  matList.append(mat)
 
 class gMaterial:    
       def __init__(self,name) :
@@ -190,16 +225,31 @@ class gObject:
           self.Solid = solid
           self.Material = material
           self.Position = position
-          self.Rotation = rotation
+          if rotation != None :
+             self.Rotation = float(rotation)
+
+      def getPosition(self) :
+          if self.Position == [0,0,0] or self.Position == None :
+             return(False)
+          else :
+             return self.Position
 
       def getShape(self):
           print("Get Object Shape")
           shape = self.Solid.getShape()
+          if self.Rotation != None :
+             print("Rotate Shape")
+             # We are dealing with XY plane so rotate about z axis
+             rshape = shape.rotate((.0,.0,.0),(.0,.0,.10), self.Rotation)
+             print("Shape Rotated")
+          else :   
+             rshape = shape   
           if ( self.Position == [0,0,0] or self.Position == None ) :
-             return(shape)
+             print("Null Position") 
+             return(rshape)
           else :
              print("Translate position") 
-             fshape = shape.translate(cq.Vector(self.Position))
+             fshape =rshape.translate(cq.Vector(self.Position))
              return(fshape)
 
       def getMaterial(self, matList ) : 
@@ -207,14 +257,20 @@ class gObject:
           if name not in matList :
              matList.append(name)
              print(name)
+      
+      def getMaterialName(self) : 
+          return(self.Material.getName())
 
       def getSolid(self) :
           return(self.Solid)
 
-      def exportObj(self,fp) :
+      def getSolidName(self) :
+          return(self.Solid.getName())
+
+      def exportObject(self,fp) :
           print("Export Obj")
-          fp.write('materialref ref="'+self.Material.Name+'"/>')
-          fp.write('solidred ref="'+self.Solid.Name+'"/>')        
+          #fp.write('materialref ref="'+self.Material.Name+'"/>')
+          #fp.write('solidred ref="'+self.Solid.Name+'"/>')        
 
 class gBox :
       def __init__(self,name,x,y,z) :
@@ -227,9 +283,17 @@ class gBox :
       def getName(self) :
           return(self.Name)
 
-      def writeSolid(self,fp) :
-          fp.write('<box name='+str(self.Name)+' x="'+ \
-                    str(self.X)+' y="'+str(self.Y)+' z="'+str(self.Z)+'/>\n')
+      def exportSolid(self,solids) :
+          
+          import lxml.etree  as ET
+          print("Export box")
+
+          ET.SubElement(solids, 'box', {'name': self.Name,
+                             'x': str(self.X), \
+                             'y': str(self.Y), \
+                             'z': str(self.Z), \
+                             'lunit': 'mm'})
+
 
       def getShape(self) :
           import cadquery as cq

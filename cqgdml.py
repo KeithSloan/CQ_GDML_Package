@@ -141,41 +141,20 @@ class gVol:
     def addVol(self,vol) :
         self.SubVols.append(vol)
 
-    def exportVol(self, filename, subvol = False ) :
+    def exportVolStructure(self, Vol, structure, define):
         import lxml.etree  as ET
-
-        DefineCount = 0
-
-        print("Export Volume")
-        if subvol == False :
-           gdml = ET.Element('gdml') 
-           define = ET.SubElement(gdml, 'define')
-           structure = ET.SubElement(gdml, 'structure')
-           setup = ET.SubElement(gdml, 'setup', {'name': 'Default', 'version': '1.0'})
-           ET.SubElement(setup,'world', {'ref':self.Name})
-           ent  = ET.Entity("materials")
-           materials = ET.SubElement(gdml, 'materials')
-           materials.append(ent)
-
-           # Now deal with solids
-           solids = ET.SubElement(gdml, 'solids')
-           print("Export Solids")
-           solidNames = []
-           self.getSolids(solids, solidNames,True)
-
-        # Now deal with structure
-        # if more than one object have to output as vols & physvol
-        print("Export Volume")
-         
-        name = self.Name
+        print("Export Volume Structure")
+        
+        print(Vol.Name)
+        name = Vol.Name
         vol = ET.SubElement(structure,'Volume', {'name': name})
-        o = self.Objects[0]
+        o = Vol.Objects[0]
         ET.SubElement(vol, 'materialref', {'ref': o.getMaterialName()})
         ET.SubElement(vol, 'solidref', {'ref': o.getSolidName()})
           
         # Ouput physvols
-        count = 0
-        for o in self.Objects :
+        print("Number of Objects : "+str(len(Vol.Objects)))
+        for o in Vol.Objects :
             pvname = 'PV'+o.Name
             print('physvol : '+pvname)
             if o.checkPosRot() :
@@ -204,17 +183,43 @@ class gVol:
                      'z':str(rot[3])})
                   print("Exported Rotation")
 
-                  
+        #numSub = len(Vol.SubVols)
+        #print("Num Sub Vols : "+str(numSub))
+        if numSub > 0 :
+           #print("Deal with subVols")
+           for o in Vol.SubVols :
+               #print("Sub Volume")
+               self.exportVolStructure(o, structure, define)
 
-                    #### more to do
-        #for v in self.SubVols :
-        #      pvname = 'PV'+v.Name
-        #      print('<physvol : '+pvname)
-        #      pvol = ET.SubElement(vol,'volume', {'name': pvname})
-        #      ET.SubElement(pvol, 'materialref', {'ref': o.getMaterialName()})
-        #      ET.SubElement(pvol, 'solidref', {'ref': o.getSolidName()})
-         #     exportPosition(define, o.Position)
+    def exportVol(self, filename ) :
+        import lxml.etree  as ET
 
+        print("Export Volume")
+        gdml = ET.Element('gdml') 
+        global define
+        define = ET.SubElement(gdml, 'define')
+        global structure
+        structure = ET.SubElement(gdml, 'structure')
+        setup = ET.SubElement(gdml, 'setup', {'name': 'Default', 'version': '1.0'})
+        ET.SubElement(setup,'world', {'ref':self.Name})
+        ent  = ET.Entity("materials")
+        materials = ET.SubElement(gdml, 'materials')
+        materials.append(ent)
+
+        # Now deal with solids
+        solids = ET.SubElement(gdml, 'solids')
+        print("Export Solids")
+        solidNames = []
+        self.getSolids(solids, solidNames,True)
+
+        # Now deal with structure
+        # if more than one object have to output as vols & physvol
+        print("Export Volume")
+
+        # Deal with this Volume and any subVols
+        print("Volume : "+self.Name)
+        self.exportVolStructure(self, structure, define)
+        
         indent(gdml)
         print("Write GDML file")
         #ET.ElementTree(gdml).write(filename)

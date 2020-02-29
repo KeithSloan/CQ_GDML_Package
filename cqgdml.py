@@ -317,7 +317,14 @@ class gObject:
              print("Rotate Shape")
              # Need to deal with other planes
              # We are dealing with XY plane so rotate about z axis
-             rshape = shape.rotate((.0,.0,.0),(.0,.0,.10), rot[1])
+             if rot[1] != 0 :
+                rshape = shape.rotate((.0,.0,.0),(.0,.0,.10), rot[1])
+                shape = rshape
+             if rot[2] != 0 :  
+                rshape = shape.rotate((.0,.0,.0),(.0,.10,.0), rot[2])
+                shape = rshape
+             if rot[3] != 0 :  
+                rshape = shape.rotate((.0,.0,.0),(.10,.0,.0), rot[1])
              print("Shape Rotated")
           else :   
              rshape = shape   

@@ -141,7 +141,7 @@ class gVol:
     def addVol(self,vol) :
         self.SubVols.append(vol)
 
-    def exportVolStructure(self, Vol, structure, define):
+    def exportVolStructure(self, Vol):
         import lxml.etree  as ET
         print("Export Volume Structure")
         
@@ -183,13 +183,13 @@ class gVol:
                      'z':str(rot[3])})
                   print("Exported Rotation")
 
-        #numSub = len(Vol.SubVols)
+        numSub = len(Vol.SubVols)
         #print("Num Sub Vols : "+str(numSub))
         if numSub > 0 :
            #print("Deal with subVols")
            for o in Vol.SubVols :
                #print("Sub Volume")
-               self.exportVolStructure(o, structure, define)
+               self.exportVolStructure(o)
 
     def exportVol(self, filename ) :
         import lxml.etree  as ET
@@ -218,7 +218,7 @@ class gVol:
 
         # Deal with this Volume and any subVols
         print("Volume : "+self.Name)
-        self.exportVolStructure(self, structure, define)
+        self.exportVolStructure(self)
         
         indent(gdml)
         print("Write GDML file")

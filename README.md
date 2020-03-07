@@ -17,7 +17,7 @@ install via
    pip install lxml
 
 ## Aim
-Provide the function to allow cad-query to create GDML Models.
+Provide the function to allow CADQuery to create GDML Models.
 
 ## Design Point
 Must be easier to program than specify via GDML

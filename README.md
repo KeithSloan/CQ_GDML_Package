@@ -22,7 +22,7 @@ Must be easier to program than specify via GDML
 
 ## Structure
 I find GDML volumes a bit confusing so am going to diverge a bit.
-So Objects can be placed in volumes and the export will deal with Physical & Logical Volumes
+i.e. Objects can be placed in volumes and the export will deal with Physical & Logical Volumes
 
   * Volume ( GDML Logical Volume )
     

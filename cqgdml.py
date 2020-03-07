@@ -103,40 +103,45 @@ class gVol:
     import lxml.etree  as ET
     
     def __init__(self,name,wire=False) :
+        from OCC.Core.BRep import BRep_Builder
+        from OCC.Core.TopoDS import TopoDS_Compound
         self.Name = name
         self.Wire = wire
         self.Objects = []
         self.SubVols = []
         #Combined shape of objects
-        self.Shape = None 
+        self.Compound = TopoDS_Compound() 
+        self.Builder = BRep_Builder()
+        self.Builder.MakeCompound(self.Compound)
+
+    def object2show(self) :
+        from cadquery import Shape
+        print("Vol Object to Show")
+        vs = self.shape2show()
+        print("Return Vol Object")             
+        return(Shape.cast(vs))
 
     def shape2show(self) :
-        print("Vol Shape to Show")
-        vs = self.Shape
+        print("Vol Object to Show")
         if len(self.SubVols) > 0 :
            print("Get SubVols")
            for v in self.SubVols :
-               svShape = v.shape2show()
-               if svShape != None :
-                  if vs != None :
-                     combined = vs.add(svShape)
-                     vs = combined
-                  else :   
-                     vs = svShape 
+              svShape = v.shape2show()
+              if svShape != None :
+                 self.Builder.Add(self.Compound,svShape)
         print("Return Vol Shape")             
-        return(vs)
+        return(self.Compound)
 
     def addObject(self,obj) :
+        from OCC.Core.BRep import BRep_Builder
+        from OCC.Core.TopoDS import TopoDS_Compound
         print("Add Object")
         self.Objects.append(obj)
         shape = obj.getShape()
         print("Got shape")
         print(shape)
-        if self.Shape != None :
-           combined = self.Shape.add(shape)
-           self.Shape = combined
-        else :
-           self.Shape = shape 
+        self.Builder.Add(self.Compound, shape)
+        print("Shape added to Compound")
 
     def addVol(self,vol) :
         self.SubVols.append(vol)
@@ -297,7 +302,7 @@ class gObject:
           self.Name = name
           self.Solid = solid
           self.Material = material
-          self.Position = position
+          self.Position = getPositionValue(position)
           self.Rotation = rotation 
     
       def checkPosRot(self) : 
@@ -315,33 +320,8 @@ class gObject:
 
       def getShape(self):
           print("Get Object Shape")
-          shape = self.Solid.getShape()
-          print("get Rotation")
-          rot = getRotation(self.Rotation)
-          if rot :
-             print("Rotate Shape")
-             # Need to deal with other planes
-             # We are dealing with XY plane so rotate about z axis
-             if rot[1] != 0 :
-                rshape = shape.rotate((.0,.0,.0),(.0,.0,.10), rot[1])
-                shape = rshape
-             if rot[2] != 0 :  
-                rshape = shape.rotate((.0,.0,.0),(.0,.10,.0), rot[2])
-                shape = rshape
-             if rot[3] != 0 :  
-                rshape = shape.rotate((.0,.0,.0),(.10,.0,.0), rot[1])
-             print("Shape Rotated")
-          else :   
-             rshape = shape   
-          print("Get Position")   
-          pos = getPosition(self.Position)
-          if pos == False :
-             print("Null Position") 
-             return(rshape)
-          else :
-             print("Translate position") 
-             fshape =rshape.translate(cq.Vector(pos))
-             return(fshape)
+          shape = self.Solid.getShape(self.Position, self.Rotation)
+          return(shape)
 
       def getMaterial(self, matList ) : 
           name = self.Material.getName()
@@ -364,10 +344,9 @@ class gObject:
           #fp.write('solidred ref="'+self.Solid.Name+'"/>')        
       
 class gBox :
-      def __init__(self,position) :
-           self.Name = getPositionName(position)
-           self.Position = position
-           #self.shape = BRepPrimAPI_MakeBox(x,y,z).Shape()
+      def __init__(self,boxParms) :
+           self.Name = boxParms[0]
+           self.BoxParms = boxParms[1:]
 
       def getName(self) :
           return(self.Name)
@@ -377,18 +356,67 @@ class gBox :
           import lxml.etree  as ET
           print("Export box")
 
-          pos = getPositionValue(self.Position) 
+          parms = self.BoxParms 
           ET.SubElement(solids, 'box', {'name': self.Name,
-                             'x': str(pos[0]), \
-                             'y': str(pos[1]), \
-                             'z': str(pos[2]), \
+                             'x': str(parms[0]), \
+                             'y': str(parms[1]), \
+                             'z': str(parms[2]), \
                              'lunit': 'mm'})
 
 
-      def getShape(self) :
+      def getShape(self, pos, rotation) :
           import cadquery as cq
+          from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
+          from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
           print("Get Shape gBox")
-          print(self.Position)
-          pos = getPositionValue(self.Position)
-          print(pos)
-          return( cq.Workplane('XY').box(pos[0],pos[1],pos[2]))
+          print(self.BoxParms)
+          parms = self.BoxParms
+          x = pos[0] - parms[0]/2
+          y = pos[1] - parms[1]/2
+          z = pos[2] - parms[2]/2
+          ret = BRepPrimAPI_MakeBox(gp_Ax2(gp_Pnt(x,y,z), \
+                  gp_Dir(0, 0, 1)),\
+                  parms[0],parms[1],parms[2]).Shape()
+          return(ret)
+
+class gCone :
+      def __init__(self,name, r1, r2, z, angle) :
+           self.Name = name
+           self.R1 = r1
+           self.R2 = r2
+           self.Z  = z
+           self.Angle = angle
+
+      def getName(self) :
+          return(self.Name)
+      
+      def exportSolid(self,solids) :
+          
+          import lxml.etree  as ET
+          print("Export Cone")
+
+          parms = self.BoxParms 
+          ET.SubElement(solids, 'cone', {'name': self.Name,
+                             'r1min': str(self.R1[0]), \
+                             'r1max': str(self.R1[1]), \
+                             'r2min': str(self.R2[0]), \
+                             'r2max': str(self.R2[1]), \
+                             'z': str(self.Z), \
+                             'lunit': 'mm'})
+
+
+      def getShape(self, pos, rotation) :
+          import cadquery as cq
+          from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
+          from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCone
+          print("Get Shape gCone")
+          x = pos[0]
+          y = pos[1]
+          z = pos[2]
+          ret = BRepPrimAPI_MakeCone(gp_Ax2(gp_Pnt(x,y,z), \
+                  gp_Dir(0, 0, 1)),\
+                  self.R1[1], self.R2[1], self.Z).Shape()
+                  #6,4,20).Shape()
+          print("Cone Shape")
+          print(ret)
+          return(ret)

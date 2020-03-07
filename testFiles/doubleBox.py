@@ -7,7 +7,8 @@ import cqgdml
 importlib.reload(cqgdml)
 from cqgdml import *
 
-rotation = ['angle', 30,0,0]
+#rotation = ['angle', 30,0,0]
+rotation = None
 
 print("Start")
 v = gVol("world")
@@ -17,5 +18,5 @@ o1 = gObject("one",s,m,None,None)
 v.addObject(o1)
 o2 = gObject("two",s,m,['pos1',20,25,0],rotation)
 v.addObject(o2)
-show_object(v.shape2show())
-v.exportVol("/tmp/file.gdml")
+show_object(v.object2show())
+#v.exportVol("/tmp/file.gdml")

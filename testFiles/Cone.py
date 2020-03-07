@@ -7,16 +7,19 @@ import cqgdml
 importlib.reload(cqgdml)
 from cqgdml import *
 
-#rotation = ['angle1',45,0,0]
-rotation = None
-position = ['box1',10,20,30]
+# Angle [startPhi, deltaPhi, units]
+angle =[0,45,'Deg']
+# radius [min, max]
+r1_base = [0,20]
+r2_top =[0,4]
+z = 25
 
 print("Start")
 v = gVol("world")
-s = gBox(position)
+s = gCone('cone1',r1_base, r2_top, z, angle)
 m = gMaterial('G4_AIR0x55d123d17ea0')
-o = gObject("o1",s,m,position,rotation)
+o = gObject("o1",s,m,None,None)
 v.addObject(o)
-print("Show")
+#print("Show")
 show_object(v.object2show())
 #v.exportVol("/tmp/file.gdml")

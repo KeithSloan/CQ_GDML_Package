@@ -343,6 +343,38 @@ class gObject:
           #fp.write('materialref ref="'+self.Material.Name+'"/>')
           #fp.write('solidred ref="'+self.Solid.Name+'"/>')        
       
+class angle :
+      def __init__(self, start, delta, units) :
+          self.Start = start
+          self.Delta = delta
+          self.Units = units
+          self.TwoPi = 2*(pi)
+
+      def getStart(self) :
+          if self.Units == 'Deg' :
+             return self.Start
+          else :
+             return self.Start * self.TwoPi / 360
+
+      def getDelta(self) :
+          if self.Units == 'Deg' :
+             return self.Delta
+          else : 
+             return self.Delta * self.TwoPi / 360
+
+      def completeRev(self) :    
+          if self.Start == 0 :
+             if self.Delta == 360 and self.Units == 'Deg' :
+                return True
+             if self.Delta == self.TwoPi and self.Units == 'Rad' :
+                return True
+          else :
+                return False
+
+      def makeCylSection(self,r,h) :
+          print("makeCylSection")
+
+
 class gBox :
       def __init__(self,boxParms) :
            self.Name = boxParms[0]
@@ -409,14 +441,20 @@ class gCone :
           import cadquery as cq
           from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
           from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCone
+          from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+
           print("Get Shape gCone")
           x = pos[0]
           y = pos[1]
           z = pos[2]
-          ret = BRepPrimAPI_MakeCone(gp_Ax2(gp_Pnt(x,y,z), \
+          cone1 = BRepPrimAPI_MakeCone(gp_Ax2(gp_Pnt(x,y,z), \
                   gp_Dir(0, 0, 1)),\
                   self.R1[1], self.R2[1], self.Z).Shape()
-                  #6,4,20).Shape()
+          if (self.R1[0] != 0 or self.R2[0] != 0 ) :
+             cone2 = BRepPrimAPI_MakeCone(gp_Ax2(gp_Pnt(x,y,z), \
+                  gp_Dir(0, 0, 1)),\
+                  self.R1[0], self.R2[0], self.Z).Shape()
+             cone1 = BRepAlgoAPI_Cut(cone1, cone2).Shape()
           print("Cone Shape")
-          print(ret)
-          return(ret)
+          print(cone1)
+          return(cone1)

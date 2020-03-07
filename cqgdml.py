@@ -343,37 +343,48 @@ class gObject:
           #fp.write('materialref ref="'+self.Material.Name+'"/>')
           #fp.write('solidred ref="'+self.Solid.Name+'"/>')        
       
-class angle :
-      def __init__(self, start, delta, units) :
-          self.Start = start
-          self.Delta = delta
-          self.Units = units
+class gAngle :
+      def __init__(self, angleParms) :
+          from math import pi
+          self.Start = angleParms[0]
+          self.Delta = angleParms[1]
+          self.Aunit = angleParms[2]
           self.TwoPi = 2*(pi)
 
       def getStart(self) :
-          if self.Units == 'Deg' :
+          if self.Aunit == 'deg' :
              return self.Start
           else :
              return self.Start * self.TwoPi / 360
 
       def getDelta(self) :
-          if self.Units == 'Deg' :
+          if self.Units == 'deg' :
              return self.Delta
           else : 
              return self.Delta * self.TwoPi / 360
 
-      def completeRev(self) :    
-          if self.Start == 0 :
-             if self.Delta == 360 and self.Units == 'Deg' :
-                return True
-             if self.Delta == self.TwoPi and self.Units == 'Rad' :
-                return True
-          else :
-                return False
+      def getUnit(self) :
+          return self.Aunit
+
+      def completeRev(self) :
+          print("Test if complete rev")
+          if self.Delta == 360 and self.Units == 'deg' :
+             return True
+          if self.Delta == self.TwoPi and self.Units == 'rad' :
+             return True
+          return False
 
       def makeCylSection(self,r,h) :
           print("makeCylSection")
+          import cadquery as cq
+          from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
+          from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
+          rect = BRepPrimAPI_MakeBox(gp_Ax2(gp_Pnt(0,0,0), \
+                  gp_Dir(0, 0, 1)),\
+                  r,h,0).Shape()
 
+#          rect = BRepPrimAPI_MakeBox(
+#cylinder = BRepPrimAPI_MakeCylinder(cylinder_origin, cylinder_radius, cylinder_height)
 
 class gBox :
       def __init__(self,boxParms) :
@@ -417,7 +428,9 @@ class gCone :
            self.R1 = r1
            self.R2 = r2
            self.Z  = z
-           self.Angle = angle
+           self.Angle = None
+           if angle != None :
+              self.Angle = gAngle(angle)
 
       def getName(self) :
           return(self.Name)
@@ -455,6 +468,61 @@ class gCone :
                   gp_Dir(0, 0, 1)),\
                   self.R1[0], self.R2[0], self.Z).Shape()
              cone1 = BRepAlgoAPI_Cut(cone1, cone2).Shape()
+          if self.Angle != None :
+             if self.Angle.completeRev() == False :
+                print("Sub Cylinder section")
           print("Cone Shape")
           print(cone1)
           return(cone1)
+
+class gTube :
+      def __init__(self,name, radius, z, angle) :
+           self.Name   = name
+           self.Radius = radius
+           self.Z  = z
+           self.Angle = None
+           if angle != None :
+              self.Angle = gAngle(angle)
+
+      def getName(self) :
+          return(self.Name)
+      
+      def exportSolid(self,solids) :
+          
+          import lxml.etree  as ET
+          print("Export Tube")
+
+          if self.Angle != None :
+             ET.SubElement(solids, 'tube', {'name': self.Name,
+                             'rmin': str(self.Radius[0]), \
+                             'rmax': str(self.Radius[1]), \
+                             'z': str(self.Z), \
+                             'startphi':str(self.angle.getStart()), \
+                             'deltaphi':str(self.angle.getDelta()), \
+                             'aunit': str(self.angle.getAunit()), \
+                             'lunit': 'mm'})
+
+
+      def getShape(self, pos, rotation) :
+          import cadquery as cq
+          from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
+          from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+          from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+
+          print("Get Shape gTube")
+          x = pos[0]
+          y = pos[1]
+          z = pos[2]
+          tube1 = BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(x,y,z), \
+                  gp_Dir(0, 0, 1)),\
+                  self.Radius[1], self.Z).Shape()
+          if self.Radius[0] != 0 :
+             tube2 = BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(x,y,z), \
+                     gp_Dir(0, 0, 1)),\
+                     self.Radius[0], self.Z).Shape()
+             tube1 = BRepAlgoAPI_Cut(tube1, tube2).Shape()
+          #if self.Angle != None :
+          #   if self.Angle.completeRev() == False :
+          #      print("Sub Cylinder section")
+          #print("Cone Shape")
+          return(tube1)

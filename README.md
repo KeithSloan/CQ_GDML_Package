@@ -47,3 +47,19 @@ The exported materials section does an imbed of the materials.xml file
 ## Uses
  
    PythonOCC
+   
+ ## Development Notes
+ 
+ based on gdml.xsd
+ 
+ * 'World Volume'
+ 
+    * May or may not have solid & material ref
+ 
+ * PhysVol 
+ 
+     * Must contain volref ( or file ) 
+     * volref must not be same as current volume name
+     * May contain position or position ref
+     * May contain rotation or rotation ref
+ 

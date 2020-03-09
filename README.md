@@ -1,12 +1,10 @@
 # CQ_GDML_Package
 
-Extension to CadQuery to allow program creation of GDML models using
+Extension to [CADQuery](https://github.com/CadQuery/cadquery) to allow program creation of GDML models using
 
 1. [CQ-Editor](https://github.com/CadQuery/CQ-editor)
 2. Jupyter
 3. Standalone Python
-
-For details of [CADQuery](https://github.com/CadQuery/cadquery)
 
 ## Install requirement
 Make sure PYTHONPATH includes directory that contains cqgdml.py
@@ -17,14 +15,14 @@ install via
    pip install lxml
 
 ## Aim
-Provide the function to allow cad-query to create GDML Models.
+Provide the function to allow CADQuery to create GDML Models.
 
 ## Design Point
 Must be easier to program than specify via GDML
 
 ## Structure
 I find GDML volumes a bit confusing so am going to diverge a bit.
-So Objects can be placed in volumes and the export will deal with Physical & Logical Volumes
+i.e. Objects can be placed in volumes and the export will deal with Physical & Logical Volumes
 
   * Volume ( GDML Logical Volume )
     

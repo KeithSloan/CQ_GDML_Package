@@ -1,0 +1,26 @@
+<gdml>
+  <define/>
+<materials>
+    <material name="G4_AIR0x55d123d17ea0" state="gas">
+      <T unit="K" value="293.15"/>
+    <MEE unit="eV" value="85.7"/>
+    <D unit="g/cm3" value="0.00120479"/>
+    <fraction n="0.000124000124000124" ref="C0x55d123ce3330"/>
+    <fraction n="0.755267755267755" ref="N0x55d123cff380"/>
+    <fraction n="0.231781231781232" ref="O0x55d1238fd2e0"/>
+    <fraction n="0.0128270128270128" ref="Ar0x55d1238fd5a0"/>
+    </material>
+  </materials>
+<solids>
+    <tube name="Tube1" rmin="10" rmax="20" z="25" startphi="0" deltaphi="45" aunit="deg" lunit="mm"/>
+  </solids>
+<structure>
+    <volume name="world">
+      <materialref ref="G4_AIR0x55d123d17ea0"/>
+    <solidref ref="Tube1"/>
+    </volume>
+  </structure>
+<setup name="Default" version="1.0">
+    <world ref="world"/>
+  </setup>
+</gdml>

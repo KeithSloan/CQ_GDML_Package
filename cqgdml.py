@@ -47,10 +47,6 @@ def indent(elem, level=0):
             elem.tail = j
     return elem
 
-def writeHdr(fp) :
-    fp.write('<?xml version="1.0" encoding="UTF-8" standalone="no" ?>')
-    fp.write('<gdml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd"') 
-
 ####################
 # Global Functions #
 ####################
@@ -146,76 +142,102 @@ class gVol:
     def addVol(self,vol) :
         self.SubVols.append(vol)
 
-    def exportVolStructure(self, Vol):
+    def exportLV(self, obj, name):
+        import lxml.etree  as ET
+        vol = ET.SubElement(structure,'volume', {'name': name})
+        ET.SubElement(vol, 'materialref', {'ref': obj.getMaterialName()})
+        ET.SubElement(vol, 'solidref', {'ref': obj.getSolidName()})
+        return(vol)
+
+    def exportObjectPV(self, obj, pvol, Parent, PVname):
+        import lxml.etree  as ET
+        #print("Get position")
+        #print(obj.Position)
+        pos = getPosition(obj.Position)
+        #print(pos)
+        if pos != False :
+           posName = getPositionName(obj.Position)
+           ET.SubElement(pvol, 'positionref', {'ref': posName})
+           ET.SubElement(define, 'position',{'name': posName, \
+              'unit':'mm', 'x': str(pos[0]), 'y':str(pos[1]), \
+              'z':str(pos[2]) }) 
+
+        print("get Rotation Value")
+        rot = getRotation(obj.Rotation)
+        print(rot)
+        if rot != False :
+           print("Export Rotation")
+           #rotName = getRotationName(o.Rotation)
+           ET.SubElement(pvol, 'rotationref', {'ref': rot[0]})
+           ET.SubElement(define, 'rotation',{'name': rot[0], \
+              'unit':'degree', 'x': str(rot[1]), 'y':str(rot[2]), \
+              'z':str(rot[3])})
+
+    def exportVolStructure(self, Parent, Name):
         import lxml.etree  as ET
         print("Export Volume Structure")
-        
-        print(Vol.Name)
-        name = Vol.Name
-        vol = ET.SubElement(structure,'Volume', {'name': name})
-        o = Vol.Objects[0]
-        ET.SubElement(vol, 'materialref', {'ref': o.getMaterialName()})
-        ET.SubElement(vol, 'solidref', {'ref': o.getSolidName()})
-          
-        # Ouput physvols
-        print("Number of Objects : "+str(len(Vol.Objects)))
-        for o in Vol.Objects :
-            pvname = 'PV'+o.Name
-            print('physvol : '+pvname)
-            if o.checkPosRot() :
-               pvol = ET.SubElement(vol,'physvol', {'name': pvname})
-               #print("Get position")
-               #print(o.Position)
-               ET.SubElement(pvol, 'volumeref', {'ref': name})
-               pos = getPosition(o.Position)
-               #rint(pos)
-               if pos != False :
-                  posName = getPositionName(o.Position)
-                  ET.SubElement(pvol, 'positionref', {'ref': posName})
-                  ET.SubElement(define, 'position',{'name': posName, \
-                     'unit':'mm', 'x': str(pos[0]), 'y':str(pos[1]), \
-                     'z':str(pos[2]) }) 
+        numObj = len(self.Objects)
+        if numObj == 1 :
+           vol = self.exportLV(self.Objects[0], Name)
+           # now output physvol's
+           for obj in self.Objects :
+               if obj.checkPosRot() == True :
+                  pvName = 'PV'+obj.Name
+                  pvol = ET.SubElement(vol, 'physvol', {'name' : pvName})
+                  #ET.SubElement(pvol,'volumeref',{'ref': lvName})
+                  self.exportObjectPV(obj, pvol, Name, 'PV'+obj.Name)
 
-               print("get Rotation Value")
-               rot = getRotation(o.Rotation)
-               print(rot)
-               if rot != False :
-                  print("Export Rotation")
-                  #rotName = getRotationName(o.Rotation)
-                  ET.SubElement(pvol, 'rotationref', {'ref': rot[0]})
-                  ET.SubElement(define, 'rotation',{'name': rot[0], \
-                     'unit':'degree', 'x': str(rot[1]), 'y':str(rot[2]), \
-                     'z':str(rot[3])})
-                  print("Exported Rotation")
+        if numObj > 1 :
+           print("More than One Object")
+           # Output Object volumes first
+           for obj in self.Objects :
+               lvName = 'LV'+obj.Name
+               lvol = self.exportLV(obj, lvName)
+           # Output this Volume
+           vol = ET.SubElement(structure, 'volume', {'name': Name })
+           # now output physvol's
+           for obj in self.Objects :
+               pvName = 'PV'+obj.Name
+               lvName = 'LV'+obj.Name
+               pvol = ET.SubElement(vol, 'physvol', {'name' : pvName})
+               ET.SubElement(pvol,'volumeref',{'ref': lvName})
+               if obj.checkPosRot() == True :
+                  self.exportObjectPV(obj, pvol, lvName, 'PV'+obj.Name)
 
-        numSub = len(Vol.SubVols)
-        #print("Num Sub Vols : "+str(numSub))
+        numSub = len(self.SubVols)
+        print("Num Sub Vols : "+str(numSub))
         if numSub > 0 :
-           #print("Deal with subVols")
-           for o in Vol.SubVols :
-               #print("Sub Volume")
-               self.exportVolStructure(o)
+           print("Deal with subVols")
+           for o in self.SubVols :
+               print("Sub Volume")
+               o.exportVolStructure(Name, o.Name)
 
     def exportVol(self, filename ) :
         import lxml.etree  as ET
 
         print("Export Volume")
-        gdml = ET.Element('gdml') 
+        #attr_qname = etree.QName(
+        gdml = ET.Element('gdml')
+        #gdml = ET.Element('gdml',nsmap={
+        #    'xsi':xsi:noNamespaceSchemaLocation="http://service-spi.web.cern.ch/service-spi/app/releases/GDML/schema/gdml.xsd" 
         global define
         define = ET.SubElement(gdml, 'define')
-        global structure
-        structure = ET.SubElement(gdml, 'structure')
-        setup = ET.SubElement(gdml, 'setup', {'name': 'Default', 'version': '1.0'})
-        ET.SubElement(setup,'world', {'ref':self.Name})
-        ent  = ET.Entity("materials")
-        materials = ET.SubElement(gdml, 'materials')
-        materials.append(ent)
-
+        #ent  = ET.Entity("materials")
+        #materials = ET.SubElement(gdml, 'materials')
+        #materials.append(ent)
+        materials = ET.parse("./materials.xml").getroot()
+        gdml.append(materials)
+        
         # Now deal with solids
         solids = ET.SubElement(gdml, 'solids')
         print("Export Solids")
         solidNames = []
         self.getSolids(solids, solidNames,True)
+
+        global structure
+        structure = ET.SubElement(gdml, 'structure')
+        setup = ET.SubElement(gdml, 'setup', {'name': 'Default', 'version': '1.0'})
+        ET.SubElement(setup,'world', {'ref':self.Name})
 
         # Now deal with structure
         # if more than one object have to output as vols & physvol
@@ -223,18 +245,16 @@ class gVol:
 
         # Deal with this Volume and any subVols
         print("Volume : "+self.Name)
-        self.exportVolStructure(self)
+        self.exportVolStructure(None, self.Name)
         
         indent(gdml)
         print("Write GDML file")
-        #ET.ElementTree(gdml).write(filename)
-        with open(filename, "w", encoding='UTF-8') as xf:
-            doc_type = """<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE doc [
-<!ENTITY materials SYSTEM "materials.xml">
-]>"""
-            tostring = ET.tostring(gdml).decode('utf-8')
-            file = f"{doc_type}{tostring}"
-            xf.write(file)
+        #with open(filename, "w", encoding='UTF-8') as xf:
+        #    doc_type = """<?xml version="1.0" encoding="UTF-8"i standalone="no" ?>"""
+        #    tostring = ET.tostring(gdml).decode('utf-8')
+        #    file = f"{doc_type}{tostring}"
+        #    xf.write(file)
+        ET.ElementTree(gdml).write(filename)
         print("GDML file written")
 
     def getSolids(self, solids, nameList, subvol=True) :
@@ -302,10 +322,13 @@ class gObject:
           self.Name = name
           self.Solid = solid
           self.Material = material
-          self.Position = getPositionValue(position)
+          # Must save position as defined as maybe None
+          # which effect export of GDML
+          self.Position = position
           self.Rotation = rotation 
     
       def checkPosRot(self) : 
+          # needed to check for physVol
           print("Check pos & rot")
           print(self.Position)
           print(self.Rotation)
@@ -314,13 +337,17 @@ class gObject:
           rot = getRotation(self.Rotation)
           print(rot)
           if pos != False or rot != False :
+             print("Have a pos or rot")
              return True
           else :
              return False 
 
       def getShape(self):
           print("Get Object Shape")
-          shape = self.Solid.getShape(self.Position, self.Rotation)
+          pos = getPositionValue(self.Position)
+          print(pos)
+          # Pass correct Position to Solid
+          shape = self.Solid.getShape(pos, self.Rotation)
           return(shape)
 
       def getMaterial(self, matList ) : 
@@ -358,12 +385,12 @@ class gAngle :
              return self.Start * self.TwoPi / 360
 
       def getDelta(self) :
-          if self.Units == 'deg' :
+          if self.Aunit == 'deg' :
              return self.Delta
           else : 
              return self.Delta * self.TwoPi / 360
 
-      def getUnit(self) :
+      def getAunit(self) :
           return self.Aunit
 
       def completeRev(self) :
@@ -408,17 +435,20 @@ class gBox :
 
 
       def getShape(self, pos, rotation) :
+          # Note: passed Position and Rotation should be valid
           import cadquery as cq
           from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
           from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
           print("Get Shape gBox")
           print(self.BoxParms)
           parms = self.BoxParms
+          print("Pos")
+          print(pos)
           x = pos[0] - parms[0]/2
           y = pos[1] - parms[1]/2
           z = pos[2] - parms[2]/2
           ret = BRepPrimAPI_MakeBox(gp_Ax2(gp_Pnt(x,y,z), \
-                  gp_Dir(0, 0, 1)),\
+                  gp_Dir(0., 0., 1.)),\
                   parms[0],parms[1],parms[2]).Shape()
           return(ret)
 
@@ -440,7 +470,6 @@ class gCone :
           import lxml.etree  as ET
           print("Export Cone")
 
-          parms = self.BoxParms 
           ET.SubElement(solids, 'cone', {'name': self.Name,
                              'r1min': str(self.R1[0]), \
                              'r1max': str(self.R1[1]), \
@@ -497,9 +526,16 @@ class gTube :
                              'rmin': str(self.Radius[0]), \
                              'rmax': str(self.Radius[1]), \
                              'z': str(self.Z), \
-                             'startphi':str(self.angle.getStart()), \
-                             'deltaphi':str(self.angle.getDelta()), \
-                             'aunit': str(self.angle.getAunit()), \
+                             'startphi':str(self.Angle.getStart()), \
+                             'deltaphi':str(self.Angle.getDelta()), \
+                             'aunit': str(self.Angle.getAunit()), \
+                             'lunit': 'mm'})
+
+          else :
+             ET.SubElement(solids, 'tube', {'name': self.Name,
+                             'rmin': str(self.Radius[0]), \
+                             'rmax': str(self.Radius[1]), \
+                             'z': str(self.Z), \
                              'lunit': 'mm'})
 
 
@@ -526,3 +562,60 @@ class gTube :
           #      print("Sub Cylinder section")
           #print("Cone Shape")
           return(tube1)
+
+class gPolyhedra :
+      def __init__(self,name, num, zplanes, angle) :
+           self.Name    = name
+           self.Num     = num
+           self.Zplanes = zplanes
+           self.Angle = None
+           if angle != None :
+              self.Angle = gAngle(angle)
+
+      def getName(self) :
+          return(self.Name)
+      
+      def exportSolid(self,solids) :
+          
+          import lxml.etree  as ET
+          print("Export Tube")
+
+          if self.Angle != None :
+             poly = ET.SubElement(solids, 'polyhedra', {'name': self.Name,
+                             'numsides': str(self.Num), \
+                             'startphi':str(self.angle.getStart()), \
+                             'deltaphi':str(self.angle.getDelta()), \
+                             'aunit': str(self.angle.getAunit()), \
+                             'lunit': 'mm'})
+             print(len(self.Zplanes))
+             for i in self.Zplanes :
+                 print(i)
+                 ET.SubElement(poly,'zplane',{'rmin=':str(i[0]), \
+                                             'rmax=':str(i[1]), \
+                                             'z=':str(i[2])})
+
+
+      def getShape(self, pos, rotation) :
+          import cadquery as cq
+          from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
+          #from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+          from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+
+          print("Get Shape gPolyhwdra")
+          x = pos[0]
+          y = pos[1]
+          z = pos[2]
+          #tube1 = BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(x,y,z), \
+          #        gp_Dir(0, 0, 1)),\
+          #        self.Radius[1], self.Z).Shape()
+          #if self.Radius[0] != 0 :
+          #   tube2 = BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(x,y,z), \
+          #           gp_Dir(0, 0, 1)),\
+          #           self.Radius[0], self.Z).Shape()
+          #   tube1 = BRepAlgoAPI_Cut(tube1, tube2).Shape()
+          #if self.Angle != None :
+          #   if self.Angle.completeRev() == False :
+          #      print("Sub Cylinder section")
+          #print("Cone Shape")
+          #return(tube1)
+

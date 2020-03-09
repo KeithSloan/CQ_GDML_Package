@@ -10,12 +10,13 @@ from cqgdml import *
 # Angle [startPhi, deltaPhi, units]
 angle =[0,45,'deg']
 # radius [min, max]
-radius = [10,20]
-z = 25
+num = 8
+#zplane rmin, rmax,z
+zplanes = [[1,9,10],[3,5,12]]
 
 print("Start")
 v = gVol("world")
-s = gTube('Tube1',radius,z,angle)
+s = gPolyhedra('poly1',num,zplanes,angle)
 m = gMaterial('G4_AIR0x55d123d17ea0')
 # gObject(Name,Solid,Material,Position,Rotation)
 o = gObject("o1",s,m,None,None)
@@ -23,4 +24,4 @@ o = gObject("o1",s,m,None,None)
 v.addObject(o)
 #print("Show")
 show_object(v.object2show())
-v.exportVol("./exportedGDML/tube.gdml")
+#v.exportVol("./exportedGDML/polyhedra.gdml")

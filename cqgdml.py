@@ -145,11 +145,12 @@ class gVol:
     def exportLV(self, obj, name):
         import lxml.etree  as ET
         vol = ET.SubElement(structure,'volume', {'name': name})
-        ET.SubElement(vol, 'materialref', {'ref': obj.getMaterialName()})
-        ET.SubElement(vol, 'solidref', {'ref': obj.getSolidName()})
+        if obj != None :
+           ET.SubElement(vol, 'materialref', {'ref': obj.getMaterialName()})
+           ET.SubElement(vol, 'solidref', {'ref': obj.getSolidName()})
         return(vol)
 
-    def exportObjectPV(self, obj, pvol, Parent, PVname):
+    def exportObjectPosRot(self, obj, pvol):
         import lxml.etree  as ET
         #print("Get position")
         #print(obj.Position)
@@ -174,18 +175,26 @@ class gVol:
               'z':str(rot[3])})
 
     def exportVolStructure(self, Parent, Name):
+        # physvol must have volumeref
+        # volumeref cannot refer to this volume
+        # world volume may or maynot have solid and material
         import lxml.etree  as ET
         print("Export Volume Structure")
         numObj = len(self.Objects)
         if numObj == 1 :
-           vol = self.exportLV(self.Objects[0], Name)
-           # now output physvol's
-           for obj in self.Objects :
-               if obj.checkPosRot() == True :
-                  pvName = 'PV'+obj.Name
-                  pvol = ET.SubElement(vol, 'physvol', {'name' : pvName})
-                  #ET.SubElement(pvol,'volumeref',{'ref': lvName})
-                  self.exportObjectPV(obj, pvol, Name, 'PV'+obj.Name)
+           obj = self.Objects[0]
+           if obj.checkPosRot() == True :
+              # As need Physvol and cannot refer to this volume.
+              volName = 'Dummy'+obj.Name
+              dvol = self.exportLV(obj ,volName)
+              vol  = self.exportLV(None, Name)
+              pvName = 'PV'+obj.Name
+              pvol = ET.SubElement(vol, 'physvol', {'name' : pvName})
+              ET.SubElement(pvol,'volumeref',{'ref': volName})
+              self.exportObjectPosRot(obj, pvol)
+           else :
+              # No Physvol needed just output Volume 
+              vol = self.exportLV(obj, Name) 
 
         if numObj > 1 :
            print("More than One Object")
@@ -202,7 +211,7 @@ class gVol:
                pvol = ET.SubElement(vol, 'physvol', {'name' : pvName})
                ET.SubElement(pvol,'volumeref',{'ref': lvName})
                if obj.checkPosRot() == True :
-                  self.exportObjectPV(obj, pvol, lvName, 'PV'+obj.Name)
+                  self.exportObjectPosRot(obj, pvol)
 
         numSub = len(self.SubVols)
         print("Num Sub Vols : "+str(numSub))

@@ -17,11 +17,14 @@
     <box name="box1" x="10" y="20" z="30" lunit="mm"/>
   </solids>
 <structure>
-    <volume name="world">
+    <volume name="Dummyo1">
       <materialref ref="G4_AIR0x55d123d17ea0"/>
     <solidref ref="box1"/>
-    <physvol name="PVo1">
-        <positionref ref="box1"/>
+    </volume>
+  <volume name="world">
+      <physvol name="PVo1">
+        <volumeref ref="Dummyo1"/>
+      <positionref ref="box1"/>
       </physvol>
     </volume>
   </structure>

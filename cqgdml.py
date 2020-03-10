@@ -174,12 +174,28 @@ class gVol:
               'unit':'degree', 'x': str(rot[1]), 'y':str(rot[2]), \
               'z':str(rot[3])})
 
+    def exportVolRef(self, vol, pvName, volref) :
+        import lxml.etree  as ET
+        pvol = ET.SubElement(vol, 'physvol', {'name' : pvName})
+        ET.SubElement(pvol,'volumeref',{'ref': volref})
+        return(pvol)
+
     def exportVolStructure(self, Parent, Name):
         # physvol must have volumeref
         # volumeref cannot refer to this volume
         # world volume may or maynot have solid and material
         import lxml.etree  as ET
         print("Export Volume Structure")
+        # Need to export SubVols first
+        subref = None
+        numSub = len(self.SubVols)
+        print("Num Sub Vols : "+str(numSub))
+        if numSub > 0 :
+           print("Deal with subVols")
+           for o in self.SubVols :
+               print("Export Sub Volume")
+               subref = o.exportVolStructure(Name, o.Name)
+        
         numObj = len(self.Objects)
         if numObj == 1 :
            obj = self.Objects[0]
@@ -189,12 +205,14 @@ class gVol:
               dvol = self.exportLV(obj ,volName)
               vol  = self.exportLV(None, Name)
               pvName = 'PV'+obj.Name
-              pvol = ET.SubElement(vol, 'physvol', {'name' : pvName})
-              ET.SubElement(pvol,'volumeref',{'ref': volName})
+              pvol = self.exportVolRef(vol, pvName, volName)
               self.exportObjectPosRot(obj, pvol)
+              retName = volName
+
            else :
               # No Physvol needed just output Volume 
-              vol = self.exportLV(obj, Name) 
+              vol = self.exportLV(obj, Name)
+              retName = Name
 
         if numObj > 1 :
            print("More than One Object")
@@ -208,18 +226,15 @@ class gVol:
            for obj in self.Objects :
                pvName = 'PV'+obj.Name
                lvName = 'LV'+obj.Name
-               pvol = ET.SubElement(vol, 'physvol', {'name' : pvName})
-               ET.SubElement(pvol,'volumeref',{'ref': lvName})
+               pvol = self.exportVolRef(vol, pvName, lvName)
                if obj.checkPosRot() == True :
                   self.exportObjectPosRot(obj, pvol)
-
-        numSub = len(self.SubVols)
-        print("Num Sub Vols : "+str(numSub))
-        if numSub > 0 :
-           print("Deal with subVols")
-           for o in self.SubVols :
-               print("Sub Volume")
-               o.exportVolStructure(Name, o.Name)
+           retName = Name       
+         
+        if subref != None :
+           # Do we have to export reference to subvolume
+           self.exportVolRef(vol, 'PV'+retName, subref)
+        return(retName)
 
     def exportVol(self, filename ) :
         import lxml.etree  as ET

@@ -16,13 +16,16 @@
   <box name="WorldBox" x="2000" y="2000" z="2000" lunit="mm"/>
   </solids>
 <structure>
-    <volume name="World">
-      <materialref ref="G4_AIR0x55d123d17ea0"/>
-    <solidref ref="WorldBox"/>
-    </volume>
-  <volume name="Dummy">
+    <volume name="Dummy">
       <materialref ref="G4_AIR0x55d123d17ea0"/>
     <solidref ref="box"/>
+    </volume>
+  <volume name="World">
+      <materialref ref="G4_AIR0x55d123d17ea0"/>
+    <solidref ref="WorldBox"/>
+    <physvol name="PVWorld">
+        <volumeref ref="Dummy"/>
+      </physvol>
     </volume>
   </structure>
 <setup name="Default" version="1.0">

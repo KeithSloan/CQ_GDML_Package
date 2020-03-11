@@ -52,9 +52,9 @@ The exported materials section does an imbed of the materials.xml file
  
  based on gdml.xsd
  
- * **'World Volume'**
+ * **'Volumes'**
  
-    * May or may not have solid & material ref
+    * **Must** have a **solid & material ref**
  
  * **PhysVol** 
  

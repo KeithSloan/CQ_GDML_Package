@@ -95,6 +95,15 @@ def getRotationName(rot) :
     else :
        return "Default-Rot"
 
+class Error(Exception) :
+    ''' Base class for other exceptions'''
+    pass
+
+class World_Volume_Must_Have_One_Object(Error) :
+    ''' Raised if world volume does not have a single object'''
+    pass
+
+
 class gVol:    
     import lxml.etree  as ET
     
@@ -183,9 +192,10 @@ class gVol:
     def exportVolStructure(self, Parent, Name):
         # physvol must have volumeref
         # volumeref cannot refer to this volume
-        # world volume may or maynot have solid and material
+        # world volume must have single object
         import lxml.etree  as ET
         print("Export Volume Structure")
+
         # Need to export SubVols first
         subref = None
         numSub = len(self.SubVols)
@@ -213,6 +223,9 @@ class gVol:
               # No Physvol needed just output Volume 
               vol = self.exportLV(obj, Name)
               retName = Name
+        if Parent == None : # Is this the world/root volume
+           if numObj == 0 or numObj > 1 :
+              raise World_Volume_Must_Have_One_Object 
 
         if numObj > 1 :
            print("More than One Object")
@@ -234,6 +247,7 @@ class gVol:
         if subref != None :
            # Do we have to export reference to subvolume
            self.exportVolRef(vol, 'PV'+retName, subref)
+        
         return(retName)
 
     def exportVol(self, filename ) :

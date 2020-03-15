@@ -14,7 +14,7 @@
     </material>
   </materials>
 <solids>
-    <box name="box1" x="10" y="10" z="10" lunit="mm"/>
+    <box name="box_1" x="10" y="10" z="10" lunit="mm"/>
   </solids>
 <structure>
     <volume name="LVone">

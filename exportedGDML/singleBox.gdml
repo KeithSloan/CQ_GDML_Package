@@ -1,6 +1,6 @@
 <gdml>
   <define>
-    <position name="box1" unit="mm" x="10" y="20" z="30"/>
+    <position name="pos1" unit="mm" x="10" y="20" z="30"/>
   </define>
 <materials>
     <material name="G4_AIR0x55d123d17ea0" state="gas">
@@ -14,17 +14,25 @@
     </material>
   </materials>
 <solids>
-    <box name="box1" x="10" y="20" z="30" lunit="mm"/>
+    <box name="box_1" x="10" y="40" z="50" lunit="mm"/>
+  <box name="world" x="1000" y="1000" z="1000" lunit="mm"/>
   </solids>
 <structure>
     <volume name="Dummyo1">
       <materialref ref="G4_AIR0x55d123d17ea0"/>
-    <solidref ref="box1"/>
+    <solidref ref="box_1"/>
     </volume>
-  <volume name="world">
+  <volume name="Dummy">
       <physvol name="PVo1">
         <volumeref ref="Dummyo1"/>
-      <positionref ref="box1"/>
+      <positionref ref="pos1"/>
+      </physvol>
+    </volume>
+  <volume name="world">
+      <materialref ref="G4_AIR0x55d123d17ea0"/>
+    <solidref ref="world"/>
+    <physvol name="PVworld">
+        <volumeref ref="Dummyo1"/>
       </physvol>
     </volume>
   </structure>

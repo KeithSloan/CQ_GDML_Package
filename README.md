@@ -22,9 +22,22 @@ Must be easier to program than specify via GDML
 
 ## Structure
 I find GDML volumes a bit confusing so am going to diverge a bit.
-i.e. Objects can be placed in volumes and the export will deal with Physical & Logical Volumes
+i.e. Objects can be placed in volumes and the export will deal with Physical & Logical Volumes.
 
-  * Volume ( GDML Logical Volume )
+So to handle this and still export a valid gdml file the rules are 
+
+  * World/Root volume must have a single object
+  
+  * Other volumes may have more that one object and the 
+  
+       * gdml export will create a GDML volume LV{object_name} for each object.
+       * physvol's PV{object_name} will be created for each of these volumes
+
+So when programming just have to remember world volume - single object
+other volumes may have more that one object. 
+
+
+  * Volume 
     
     Set of Objects
   
@@ -52,9 +65,9 @@ The exported materials section does an imbed of the materials.xml file
  
  based on gdml.xsd
  
- * **'World Volume'**
+ * **'Volumes'**
  
-    * May or may not have solid & material ref
+    * **Must** have a **solid & material ref**
  
  * **PhysVol** 
  

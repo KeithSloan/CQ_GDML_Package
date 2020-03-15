@@ -37,7 +37,7 @@ So when programming just have to remember world volume - single object
 other volumes may have more that one object. 
 
 
-  * Volume ( GDML Logical Volume )
+  * Volume 
     
     Set of Objects
   

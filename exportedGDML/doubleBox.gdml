@@ -14,7 +14,8 @@
     </material>
   </materials>
 <solids>
-    <box name="box_1" x="10" y="10" z="10" lunit="mm"/>
+    <box name="box1" x="10" y="10" z="10" lunit="mm"/>
+  <box name="World_Box" x="100" y="100" z="100" lunit="mm"/>
   </solids>
 <structure>
     <volume name="LVone">
@@ -25,13 +26,20 @@
       <materialref ref="G4_AIR0x55d123d17ea0"/>
     <solidref ref="box1"/>
     </volume>
-  <volume name="world">
+  <volume name="Dummy">
       <physvol name="PVone">
         <volumeref ref="LVone"/>
+      <positionref ref="pos1"/>
       </physvol>
     <physvol name="PVtwo">
         <volumeref ref="LVtwo"/>
-      <positionref ref="pos1"/>
+      </physvol>
+    </volume>
+  <volume name="world">
+      <materialref ref="G4_AIR0x55d123d17ea0"/>
+    <solidref ref="World_Box"/>
+    <physvol name="PVworld">
+        <volumeref ref="Dummy"/>
       </physvol>
     </volume>
   </structure>

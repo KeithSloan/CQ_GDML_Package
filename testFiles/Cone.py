@@ -7,21 +7,22 @@ import cqgdml
 importlib.reload(cqgdml)
 from cqgdml import *
 
-# Angle [startPhi, deltaPhi, units]
-angle =[0,45,'deg']
+# Sector [startPhi, deltaPhi, units]
+sector =[0,45,'deg']
 # radius [min, max]
 r1_base = [10,20]
 r2_top =[2,4]
 z = 25
 
-print("Start")
-v = gVol("world")
-s = gCone('cone1',r1_base, r2_top, z, angle)
+v1 = gVol("world")
+s1 = gBox(['worldBox',100,100,100])
 m = gMaterial('G4_AIR0x55d123d17ea0')
+v1.addObject(gObject('wo',s1,m,None,None))
+v2 = gVol('Dummy')
+v1.addVol(v2)
+scone = gCone('cone1',r1_base, r2_top, z, sector)
 # gObject(Name,Solid,Material,Position,Rotation)
-o = gObject("o1",s,m,None,None)
-# Add Object to Volume
-v.addObject(o)
+v2.addObject(gObject('oc',scone,m,None,None))
 #print("Show")
-show_object(v.object2show())
-v.exportVol("./exportedGDML/cone.gdml")
+show_object(v1.object2show())
+v1.exportVol("./exportedGDML/cone.gdml")

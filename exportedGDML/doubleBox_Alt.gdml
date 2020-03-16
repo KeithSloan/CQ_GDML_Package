@@ -1,5 +1,7 @@
 <gdml>
-  <define/>
+  <define>
+    <position name="pos1" unit="mm" x="20" y="25" z="0"/>
+  </define>
 <materials>
     <material name="G4_AIR0x55d123d17ea0" state="gas">
       <T unit="K" value="293.15"/>
@@ -12,17 +14,30 @@
     </material>
   </materials>
 <solids>
-    <cone name="cone1" r1min="10" r1max="20" r2min="2" r2max="4" z="25" lunit="mm"/>
-  <box name="worldBox" x="100" y="100" z="100" lunit="mm"/>
+    <box name="box1" x="10" y="10" z="10" lunit="mm"/>
+  <box name="World_Box" x="100" y="100" z="100" lunit="mm"/>
   </solids>
 <structure>
-    <volume name="Dummy">
+    <volume name="LVone">
       <materialref ref="G4_AIR0x55d123d17ea0"/>
-    <solidref ref="cone1"/>
+    <solidref ref="box1"/>
+    </volume>
+  <volume name="LVtwo">
+      <materialref ref="G4_AIR0x55d123d17ea0"/>
+    <solidref ref="box1"/>
+    </volume>
+  <volume name="Dummy">
+      <physvol name="PVone">
+        <volumeref ref="LVone"/>
+      <positionref ref="pos1"/>
+      </physvol>
+    <physvol name="PVtwo">
+        <volumeref ref="LVtwo"/>
+      </physvol>
     </volume>
   <volume name="world">
       <materialref ref="G4_AIR0x55d123d17ea0"/>
-    <solidref ref="worldBox"/>
+    <solidref ref="World_Box"/>
     <physvol name="PVworld">
         <volumeref ref="Dummy"/>
       </physvol>

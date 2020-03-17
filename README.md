@@ -56,7 +56,16 @@ other volumes may have more that one object.
   
 ## Materials
 The exported materials section does an imbed of the materials.xml file
-  
+
+## Display
+The cq-editor has the ability to switch between solid and wireframe.
+If you want to display in solid then you may want to use
+
+      show_object(v2.object2show())
+
+Where v2 is the volume below the world volume v1 which in solid would hide the volumes
+it contains.
+
 ## Uses
  
    PythonOCC

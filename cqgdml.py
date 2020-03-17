@@ -413,12 +413,17 @@ class gSector :
           from math import pi
           from OCC.Core.gp import gp_Ax1, gp_Pnt, gp_Dir
           
-          self.Start = sectorParms[0]
-          self.Delta = sectorParms[1]
-          self.Aunit = sectorParms[2]
-          self.RevAxis = gp_Ax1(gp_Pnt(0,0,0), gp_Dir(0,0,1))
-          self.Pi = pi
           self.TwoPi = 2*(pi)
+          self.Pi = pi
+          if sectorParms != None :
+             self.Start = sectorParms[0]
+             self.Delta = sectorParms[1]
+             self.Aunit = sectorParms[2]
+          else :   
+             self.Start = 0
+             self.Delta = self.TwoPi
+             self.Aunit = 'rad'
+          self.RevAxis = gp_Ax1(gp_Pnt(0,0,0), gp_Dir(0,0,1))
 
       def getStart(self) :
           # get Start in Radians
@@ -554,9 +559,7 @@ class gCone :
            self.R1 = r1
            self.R2 = r2
            self.Z  = z
-           self.Sector = None
-           if sector != None :
-              self.Sector = gSector(sector)
+           self.Sector = gSector(sector)
 
       def getName(self) :
           return(self.Name)
@@ -618,9 +621,7 @@ class gTube :
            self.Name   = name
            self.Radius = radius
            self.Z  = z
-           self.Sector = None
-           if sector != None :
-              self.Sector = gSector(sector)
+           self.Sector = gSector(sector)
 
       def getName(self) :
           return(self.Name)
@@ -630,23 +631,14 @@ class gTube :
           import lxml.etree  as ET
           print("Export Tube")
 
-          if self.Angle != None :
-             ET.SubElement(solids, 'tube', {'name': self.Name,
-                             'rmin': str(self.Radius[0]), \
-                             'rmax': str(self.Radius[1]), \
-                             'z': str(self.Z), \
-                             'startphi':str(self.Sector.getStart()), \
-                             'deltaphi':str(self.Sector.getDelta()), \
-                             'aunit': str(self.Sector.getAunit()), \
-                             'lunit': 'mm'})
-
-          else :
-             ET.SubElement(solids, 'tube', {'name': self.Name,
-                             'rmin': str(self.Radius[0]), \
-                             'rmax': str(self.Radius[1]), \
-                             'z': str(self.Z), \
-                             'lunit': 'mm'})
-
+          ET.SubElement(solids, 'tube', {'name': self.Name,
+                          'rmin': str(self.Radius[0]), \
+                          'rmax': str(self.Radius[1]), \
+                          'z': str(self.Z), \
+                          'startphi':str(self.Sector.getStart()), \
+                          'deltaphi':str(self.Sector.getDelta()), \
+                          'aunit': 'rad', \
+                          'lunit': 'mm'})
 
       def getShape(self, pos, rotation) :
           import cadquery as cq
@@ -666,11 +658,20 @@ class gTube :
                      gp_Dir(0, 0, 1)),\
                      self.Radius[0], self.Z).Shape()
              tube1 = BRepAlgoAPI_Cut(tube1, tube2).Shape()
-          #if self.Angle != None :
-          #   if self.Angle.completeRev() == False :
-          #      print("Sub Cylinder section")
-          #print("Cone Shape")
-          return(tube1)
+          if self.Sector.completeRev() == False :
+             print("Need to section")
+             if self.Sector.less90() == True :
+                print("Common")
+                shape = self.Sector.makeCommon(self.Radius[1], self.Z, tube1) 
+             else :
+                print("Cut") 
+                shape = self.Sector.makeCut(self.Radius[1], self.Z, tube1)
+             if self.Sector.getStart() == 0 :
+                return shape
+             else :
+                return self.Sector.rotate(shape)
+          else : 
+             return tube1 
 
 class gPolyhedra :
       def __init__(self,name, num, zplanes, angle) :

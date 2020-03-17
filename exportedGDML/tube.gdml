@@ -12,15 +12,23 @@
     </material>
   </materials>
 <solids>
-    <tube name="Tube1" rmin="10" rmax="20" z="25" startphi="0" deltaphi="45" aunit="deg" lunit="mm"/>
+    <tube name="tube" rmin="10" rmax="20" z="25" startphi="0.3490658503988659" deltaphi="1.5707963267948966" aunit="rad" lunit="mm"/>
+  <box name="WorldBox" x="100" y="100" z="100" lunit="mm"/>
   </solids>
 <structure>
-    <volume name="world">
+    <volume name="Dummy">
       <materialref ref="G4_AIR0x55d123d17ea0"/>
-    <solidref ref="Tube1"/>
+    <solidref ref="tube"/>
+    </volume>
+  <volume name="World">
+      <materialref ref="G4_AIR0x55d123d17ea0"/>
+    <solidref ref="WorldBox"/>
+    <physvol name="PVWorld">
+        <volumeref ref="Dummy"/>
+      </physvol>
     </volume>
   </structure>
 <setup name="Default" version="1.0">
-    <world ref="world"/>
+    <world ref="World"/>
   </setup>
 </gdml>

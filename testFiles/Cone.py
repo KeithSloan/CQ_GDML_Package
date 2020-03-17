@@ -8,7 +8,7 @@ importlib.reload(cqgdml)
 from cqgdml import *
 
 # Sector [startPhi, deltaPhi, units]
-sector =[0,45,'deg']
+sector =[0,125,'deg']
 # radius [min, max]
 r1_base = [10,20]
 r2_top =[2,4]
@@ -22,7 +22,12 @@ v2 = gVol('Dummy')
 v1.addVol(v2)
 scone = gCone('cone1',r1_base, r2_top, z, sector)
 # gObject(Name,Solid,Material,Position,Rotation)
-v2.addObject(gObject('oc',scone,m,None,None))
-#print("Show")
-show_object(v1.object2show())
-v1.exportVol("./exportedGDML/cone.gdml")
+o2 = gObject('oc',scone,m,None,None)
+v2.addObject(o2)
+#v2.addObject(gObject('oc',scone,m,None,None))
+#show world volume
+#show_object(v1.object2show())
+#show volumes below world
+show_object(v2.object2show())
+#export world volume
+#v1.exportVol("./exportedGDML/cone.gdml")

@@ -408,28 +408,38 @@ class gObject:
           #fp.write('materialref ref="'+self.Material.Name+'"/>')
           #fp.write('solidred ref="'+self.Solid.Name+'"/>')        
       
-class gAngle :
-      def __init__(self, angleParms) :
+class gSector :
+      def __init__(self, sectorParms) :
           from math import pi
-          self.Start = angleParms[0]
-          self.Delta = angleParms[1]
-          self.Aunit = angleParms[2]
+          from OCC.Core.gp import gp_Ax1, gp_Pnt, gp_Dir
+          
+          self.Start = sectorParms[0]
+          self.Delta = sectorParms[1]
+          self.Aunit = sectorParms[2]
+          self.RevAxis = gp_Ax1(gp_Pnt(0,0,0), gp_Dir(0,0,1))
+          self.Pi = pi
           self.TwoPi = 2*(pi)
 
       def getStart(self) :
-          if self.Aunit == 'deg' :
+          # get Start in Radians
+          if self.Aunit == 'rad' :
              return self.Start
           else :
              return self.Start * self.TwoPi / 360
 
       def getDelta(self) :
-          if self.Aunit == 'deg' :
+          # get Delta in Radians
+          if self.Aunit == 'rad' :
              return self.Delta
           else : 
              return self.Delta * self.TwoPi / 360
 
       def getAunit(self) :
           return self.Aunit
+
+      def less90(self) :
+          if self.getDelta() < self.Pi :
+             return True 
 
       def completeRev(self) :
           print("Test if complete rev")
@@ -439,17 +449,65 @@ class gAngle :
              return True
           return False
 
+      def makeRect(self,r,h) :
+
+          from OCC.Core.gp import gp_Pnt
+          from OCC.BRepBuilderAPI import BRepBuilderAPI_MakeWire
+          from OCC.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+          from OCC.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+
+          print("Make Rect")
+          wire = BRepBuilderAPI_MakeWire()
+          print("Make Points")
+          p1 = gp_Pnt(0,0,0)
+          p2 = gp_Pnt(r,0,0)
+          p3 = gp_Pnt(r,0,h)
+          p4 = gp_Pnt(0,0,h)
+          print("make Edges")
+          wire.Add(BRepBuilderAPI_MakeEdge(p1,p2).Edge())
+          wire.Add(BRepBuilderAPI_MakeEdge(p2,p3).Edge())
+          wire.Add(BRepBuilderAPI_MakeEdge(p3,p4).Edge())
+          wire.Add(BRepBuilderAPI_MakeEdge(p4,p1).Edge())
+          print("Make Face")
+          face = BRepBuilderAPI_MakeFace(wire.Wire()).Face()
+          print("Return Face")
+          return face
+
+      def rotate(self,shape) :
+          from OCC.Core.gp import gp_Trsf
+          from OCC.BRepBuilderAPI import BRepBuilderAPI_Transform
+
+          trns = gp_Trsf()
+          trns.SetRotation(self.RevAxis,self.getStart())
+          brep_trns = BRepBuilderAPI_Transform(shape, trns, False)
+          brep_trns.Build()
+          shape = brep_trns.Shape()
+          return shape
+
       def makeCylSection(self,r,h) :
           print("makeCylSection")
           import cadquery as cq
-          from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
           from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeBox
-          rect = BRepPrimAPI_MakeBox(gp_Ax2(gp_Pnt(0,0,0), \
-                  gp_Dir(0, 0, 1)),\
-                  r,h,0).Shape()
+          from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeRevol
+          
+          rect = self.makeRect(r,h)
+          print("rect made")
+          print(self.getDelta())
+          shape = BRepPrimAPI_MakeRevol(rect,self.RevAxis, \
+                         self.getDelta()).Shape()
+          return shape
 
-#          rect = BRepPrimAPI_MakeBox(
-#cylinder = BRepPrimAPI_MakeCylinder(cylinder_origin, cylinder_radius, cylinder_height)
+      def makeCut(self,r,h,shape) :
+          from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+          cyl = self.makeCylSection(r,h)
+          cut = BRepAlgoAPI_Cut(shape, cyl).Shape()
+          return cut
+
+      def makeCommon(self,r,h,shape) :
+          from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Common
+          cyl = self.makeCylSection(r,h)
+          common = BRepAlgoAPI_Common(cyl, shape).Shape()
+          return common
 
 class gBox :
       def __init__(self,boxParms) :
@@ -491,14 +549,14 @@ class gBox :
           return(ret)
 
 class gCone :
-      def __init__(self,name, r1, r2, z, angle) :
+      def __init__(self,name, r1, r2, z, sector) :
            self.Name = name
            self.R1 = r1
            self.R2 = r2
            self.Z  = z
-           self.Angle = None
-           if angle != None :
-              self.Angle = gAngle(angle)
+           self.Sector = None
+           if sector != None :
+              self.Sector = gSector(sector)
 
       def getName(self) :
           return(self.Name)
@@ -509,11 +567,14 @@ class gCone :
           print("Export Cone")
 
           ET.SubElement(solids, 'cone', {'name': self.Name,
-                             'r1min': str(self.R1[0]), \
-                             'r1max': str(self.R1[1]), \
-                             'r2min': str(self.R2[0]), \
-                             'r2max': str(self.R2[1]), \
+                             'rmin1': str(self.R1[0]), \
+                             'rmax1': str(self.R1[1]), \
+                             'rmin2': str(self.R2[0]), \
+                             'rmax2': str(self.R2[1]), \
+                             'startphi' : str(self.Sector.getStart()), \
+                             'deltaphi' : str(self.Sector.getDelta()), \
                              'z': str(self.Z), \
+                             'aunit' : 'rad',
                              'lunit': 'mm'})
 
 
@@ -535,21 +596,31 @@ class gCone :
                   gp_Dir(0, 0, 1)),\
                   self.R1[0], self.R2[0], self.Z).Shape()
              cone1 = BRepAlgoAPI_Cut(cone1, cone2).Shape()
-          if self.Angle != None :
-             if self.Angle.completeRev() == False :
-                print("Sub Cylinder section")
+          if self.Sector != None :
+             if self.Sector.completeRev() == False :
+                print("Need to section")
+                if self.Sector.less90() == True :
+                   print("Common")
+                   shape = self.Sector.makeCommon(self.R1[1], self.Z, cone1) 
+                else :
+                   print("Cut") 
+                   shape = self.Sector.makeCut(self.R1[1], self.Z, cone1)
+                if self.Sector.getStart() == 0 :
+                   return shape
+                else :
+                   return self.Sector.rotate(shape)
           print("Cone Shape")
           print(cone1)
           return(cone1)
 
 class gTube :
-      def __init__(self,name, radius, z, angle) :
+      def __init__(self,name, radius, z, sector) :
            self.Name   = name
            self.Radius = radius
            self.Z  = z
-           self.Angle = None
-           if angle != None :
-              self.Angle = gAngle(angle)
+           self.Sector = None
+           if sector != None :
+              self.Sector = gSector(sector)
 
       def getName(self) :
           return(self.Name)
@@ -564,9 +635,9 @@ class gTube :
                              'rmin': str(self.Radius[0]), \
                              'rmax': str(self.Radius[1]), \
                              'z': str(self.Z), \
-                             'startphi':str(self.Angle.getStart()), \
-                             'deltaphi':str(self.Angle.getDelta()), \
-                             'aunit': str(self.Angle.getAunit()), \
+                             'startphi':str(self.Sector.getStart()), \
+                             'deltaphi':str(self.Sector.getDelta()), \
+                             'aunit': str(self.Sector.getAunit()), \
                              'lunit': 'mm'})
 
           else :

@@ -12,7 +12,7 @@
     </material>
   </materials>
 <solids>
-    <cone name="cone1" r1min="10" r1max="20" r2min="2" r2max="4" z="25" lunit="mm"/>
+    <cone name="cone1" rmin1="10" rmax1="20" rmin2="2" rmax2="4" startphi="0.7853981633974483" deltaphi="2.1816615649929116" z="25" aunit="rad" lunit="mm"/>
   <box name="worldBox" x="100" y="100" z="100" lunit="mm"/>
   </solids>
 <structure>

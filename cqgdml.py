@@ -95,6 +95,33 @@ def getRotationName(rot) :
     else :
        return "Default-Rot"
 
+def regPolygon(num, radius, height) :
+
+    import math
+
+    from OCC.Core.gp import gp_Pnt
+
+    print('regPolygon : '+str(num)+' : '+str(radius)+' : '+str(height))
+
+    aRad = math.pi * 2 / num
+    pList = []
+    for i in range(1, num+2) :
+        pList.append(gp_Pnt(radius*math.sin(i*aRad), \
+                     radius*math.cos(i*aRad),height))
+    return pList    
+
+def makeFace(pntList) :
+
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
+    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeFace
+
+    wire = BRepBuilderAPI_MakePolygon()
+    for i in pntList :
+        wire.Add(i)
+    wire.Close()    
+    face = BRepBuilderAPI_MakeFace(wire.Wire()).Face()
+    return face
+
 class Error(Exception) :
     ''' Base class for other exceptions'''
     pass
@@ -674,13 +701,11 @@ class gTube :
              return tube1 
 
 class gPolyhedra :
-      def __init__(self,name, num, zplanes, angle) :
+      def __init__(self,name, num, zplanes, sector) :
            self.Name    = name
            self.Num     = num
            self.Zplanes = zplanes
-           self.Angle = None
-           if angle != None :
-              self.Angle = gAngle(angle)
+           self.Sector  = gSector(sector)
 
       def getName(self) :
           return(self.Name)
@@ -688,44 +713,93 @@ class gPolyhedra :
       def exportSolid(self,solids) :
           
           import lxml.etree  as ET
-          print("Export Tube")
+          print("Export Polyhedra")
 
-          if self.Angle != None :
-             poly = ET.SubElement(solids, 'polyhedra', {'name': self.Name,
-                             'numsides': str(self.Num), \
-                             'startphi':str(self.angle.getStart()), \
-                             'deltaphi':str(self.angle.getDelta()), \
-                             'aunit': str(self.angle.getAunit()), \
-                             'lunit': 'mm'})
-             print(len(self.Zplanes))
-             for i in self.Zplanes :
-                 print(i)
-                 ET.SubElement(poly,'zplane',{'rmin=':str(i[0]), \
-                                             'rmax=':str(i[1]), \
-                                             'z=':str(i[2])})
+          poly = ET.SubElement(solids, 'polyhedra', {'name': self.Name,
+                          'numsides': str(self.Num), \
+                          'startphi':str(self.Sector.getStart()), \
+                          'deltaphi':str(self.Sector.getDelta()), \
+                          'aunit': 'rad', \
+                          'lunit': 'mm'})
+          print(len(self.Zplanes))
+          for i in self.Zplanes :
+              print(i)
+              ET.SubElement(poly,'zplane',{'rmin':str(i[0]), \
+                                          'rmax':str(i[1]), \
+                                          'z':str(i[2])})
 
 
       def getShape(self, pos, rotation) :
           import cadquery as cq
-          from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
-          #from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder
+          #from OCC.Core.gp import gp_Ax2, gp_Pnt, gp_Dir
+          from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakePolygon
+          from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeSolid
+          from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Sewing
           from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Cut
+          from OCC.Core.TopoDS import topods
 
-          print("Get Shape gPolyhwdra")
+          print("Get Shape gPolyhedra")
           x = pos[0]
           y = pos[1]
           z = pos[2]
-          #tube1 = BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(x,y,z), \
-          #        gp_Dir(0, 0, 1)),\
-          #        self.Radius[1], self.Z).Shape()
-          #if self.Radius[0] != 0 :
-          #   tube2 = BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(x,y,z), \
-          #           gp_Dir(0, 0, 1)),\
-          #           self.Radius[0], self.Z).Shape()
-          #   tube1 = BRepAlgoAPI_Cut(tube1, tube2).Shape()
-          #if self.Angle != None :
-          #   if self.Angle.completeRev() == False :
-          #      print("Sub Cylinder section")
-          #print("Cone Shape")
-          #return(tube1)
+          
+          sewing = BRepBuilderAPI_Sewing()
+          # Add top polygon
+          print('top polygon')
+          top = regPolygon(self.Num, self.Zplanes[0][1], \
+                             self.Zplanes[0][2])
+          maxR = self.Zplanes[0][1]
+          height = self.Zplanes[0][2]
+          sewing.Add(makeFace(top))
+          n = len(self.Zplanes)
+          for i in range(1,n) :
+              bot = regPolygon(self.Num, self.Zplanes[i][1], \
+                             self.Zplanes[i][2])
+              if self.Zplanes[i][1] > maxR :
+                 maxR = self.Zplanes[i][1] 
+              height = height + self.Zplanes[i][2]   
+              for i in range(0, self.Num) :
+                  face = makeFace([top[i],top[i+1],bot[i+1],bot[i]])
+                  sewing.Add(face)
+              top = bot    
+          # Add bottom polygon
+          print('bottom polygon')
+          sewing.Add(makeFace(bot))
+          sewing.Perform()
+          sewedShape = sewing.SewedShape()
+          outer = BRepBuilderAPI_MakeSolid(topods.Shell(sewedShape))
 
+          sewing = BRepBuilderAPI_Sewing()
+          # Add top polygon
+          print('top polygon')
+          top = regPolygon(self.Num, self.Zplanes[0][0], \
+                             self.Zplanes[0][2])
+          sewing.Add(makeFace(top))
+          n = len(self.Zplanes)
+          for i in range(1,n) :
+              bot = regPolygon(self.Num, self.Zplanes[i][0], \
+                             self.Zplanes[i][2])
+              for i in range(0, self.Num) :
+                  face = makeFace([top[i],top[i+1],bot[i+1],bot[i]])
+                  sewing.Add(face)
+              top = bot    
+          # Add bottom polygon
+          print('bottom polygon')
+          sewing.Add(makeFace(bot))
+          sewing.Perform()
+          sewedShape = sewing.SewedShape()
+          inner = BRepBuilderAPI_MakeSolid(topods.Shell(sewedShape))
+          poly  = BRepAlgoAPI_Cut(outer.Shape(), inner.Shape()).Shape()
+          if self.Sector.completeRev() == False :
+             print("Need to section")
+             if self.Sector.less90() == True :
+                print("Common")
+                shape = self.Sector.makeCommon(maxR, height, poly) 
+             else :
+                print("Cut") 
+                shape = self.Sector.makeCut(maxR, height, poly)
+             if self.Sector.getStart() == 0 :
+                return shape
+             else :
+                return self.Sector.rotate(shape)
+          return poly.Shape()
